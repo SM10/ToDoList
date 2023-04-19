@@ -1,0 +1,32 @@
+{
+  "name": "todolist",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "webpack --progress --watch",
+    "build": "webpack --config webpack.config.js",
+    "server": "webpack-dev-server --open --output-path ./dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SM10/ToDoList.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SM10/ToDoList/issues"
+  },
+  "homepage": "https://github.com/SM10/ToDoList#readme",
+  "dependencies": {
+    "webpack": "^5.80.0"
+  },
+  "devDependencies": {
+    "css-loader": "^6.7.3",
+    "style-loader": "^3.3.2",
+    "webpack-cli": "^5.0.1",
+    "webpack-dev-server": "^4.13.3"
+  }
+}
