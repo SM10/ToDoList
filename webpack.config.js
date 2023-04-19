@@ -10,6 +10,9 @@ module.exports = {
         rules:[{
             test:/\.csv$/i,
             use: ['style-loader', 'css-loader']
+        }, {
+            test:/\.(png|jpg|jpeg|svg)$/i,
+            type: 'asset/resource'
         }]
     }
 }
