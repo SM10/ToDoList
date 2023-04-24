@@ -280,7 +280,7 @@ const PortfolioController = (portfolio) => {
         portfolio.projects.splice(index, 0 )
     }
 
-    return {AddProject, RemoveProjectByObject, RemoveProjectByIndex}
+    return {AddProject, RemoveProjectByObject, RemoveProjectByIndex, OnProjectAdded}
 }
 
 const PortfolioView = (portfolio) => {
@@ -288,12 +288,6 @@ const PortfolioView = (portfolio) => {
     const RegularView = () => {
         let portfoliopage = document.createElement('div')
         portfoliopage.id = portfolio.name + '-page'
-
-        let addtaskbutton = document.createElement('button')
-        addtaskbutton.textContent = 'Add Project'
-        addtaskbutton.className = 'add-project-button portfolio-lv-button'
-        addtaskbutton.id = portfolio.name + '-add-task'
-        portfoliopage.appendChild(addtaskbutton)
 
         portfolio.projects.forEach((project)=>{
             portfoliopage.appendChild(ProjectView(project))
