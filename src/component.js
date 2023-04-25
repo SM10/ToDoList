@@ -26,7 +26,6 @@ const TaskView = (id) => {
     let savefunction = null
     let deletefunction = null
     let regularview = null
-    let sideview = null
 
     const CreateNode = function(id, propertyname, inputtype){
         let ret = document.createElement('div')
@@ -77,8 +76,10 @@ const TaskView = (id) => {
         return innerviews.savebutton
     }
 
-    const SetOnSaveButtonClickedListener = function(){
-        controller.OnSave()
+    const SetOnSaveButtonClickedListener = function(onSaveButtonClicked){
+        innerviews.savebutton.removeEventListener('click', savefunction, false)
+        savefunction = onSaveButtonClicked
+        innerviews.savebutton.addEventListener('click', onSaveButtonClicked, false)
     }
 
     const CreateDeleteButton = function(formid){
@@ -96,7 +97,7 @@ const TaskView = (id) => {
         innerviews.deletebutton.addEventListener('click', deletefunction, false)
     }
 
-    const GetRegularView = () => {
+    const GetNode = () => {
         if(regularview == null){
         let card = document.createElement('div')
         card.className = 'task-card task-regular-card'
@@ -125,17 +126,223 @@ const TaskView = (id) => {
         
         return regularview
     }
-    const GetSidebarView = () => {
-        if(sideview == null){
-        let card = document.createElement('div')
-        card.className = 'task-card task-side-card'
-        card.id = id + '-side-card'
-
-        sideview = card
-        return card
-        }
-        return sideview
-    }
-    return {RegularView, SidebarView, OnSaveButtonClickedListener, OnDeleteButtonClickedListener}
+    return {GetNode, SetOnSaveButtonClickedListener, SetOnDeleteButtonClickedListener}
 }
 
+const TaskModel = (task) => {
+    let views = []
+    
+    function AddView(view){
+        views.push(view)
+        view.SetOnSaveButtonClickedListener(OnSave)
+        view.SetOnDeleteButtonClickedListener(OnDelete)
+    }
+
+    function OnDelete(){
+        views.forEach(view => {
+            view.GetNode().remove()
+        })
+    }
+
+    function OnSave(args){
+        task.title= args.title
+        task.description= args.description
+        task.dueDate = args.dueDate
+        task.priority = args.priority
+        task.notes= args.notes
+        task.project = args.project
+        task.iscomplete = args.iscomplete
+    }
+
+    function SetID(id){
+        task.id = id
+    }
+
+    function GetID(){
+        return task.id
+    }
+
+    return {AddView, SetID, GetID}
+}
+
+function Project(name){
+    this.tasks = []
+    this.name = name
+
+    function GetTaskId(task){
+        for (let i = 0; i < this.tasks.length; i++){
+            if(this.tasks[i] == task) {return i}
+        }
+        return null
+    }
+
+    function AddTask(task){
+        this.tasks.push(task)
+    }
+
+    function RemoveTaskByObject(task){
+        for(let i = 0; i < this.tasks.length; i++){
+            if(this.tasks[i] === task) {this.tasks.splice(i, 0)}
+        }
+    }
+
+    function RemoveTaskByIndex(index){
+        this.tasks.splice(index,0)
+    }
+}
+
+const ProjectView = (project, id) => {
+
+    const RegularView = () => {
+        let projectpage = document.createElement('div')
+        projectpage.classname = 'project-regular-card'
+        projectpage.id = project + '-' + id + '-page'
+        
+        let projecttitle = document.createElement('div')
+        projecttitle.textContent = project.name
+        projectpage.appendChild(projecttitle)
+
+        let addtaskbutton = document.createElement('button')
+        addtaskbutton.textContent = 'Add Task'
+        addtaskbutton.className = 'add-task-button project-lv-button'
+        addtaskbutton.id = project + '-' + id + '-add-task'
+        projectpage.appendChild(addtaskbutton)
+
+        let deleteproject = document.createElement('button')
+        deleteproject.textContent = 'Delete Project'
+        deleteproject.className = 'add-task-button project-lv-button'
+        deleteproject.id = project + '-' + id + '-delete-project'
+        projectpage.appendChild(deleteproject)
+
+        let expandicon = document.createElement('img')
+        expandicon.className = 'project-lv-icon'
+        expandicon.id = project + '-' + id + '-expand-project'
+        projectpage.appendChild(expandicon)
+
+        project.tasks.forEach((task)=>{
+            projectpage.appendChild(TaskView(task).RegularView())
+        })
+
+        return projectpage
+    }
+
+    const SidebarView = () => {
+        let projectpage = document.createElement('div')
+        projectpage.classname = 'project-side-card'
+
+        let expandicon = document.createElement('img')
+        expandicon.className = 'project-lv-icon'
+        expandicon.id = project + '-' + id + '-expand-project-side'
+        projectpage.appendChild(expandicon)
+
+        let projecttitle = document.createElement('div')
+        projecttitle.textContent = project.name
+        project.tasks.forEach((task)=>{
+            projectpage.appendChild(TaskView(task).SidebarView())
+        })
+    }
+
+    const OnTaskAdded = (task) => {
+        let projectpage = document.querySelector('#' + project + '-' + id + '-page')
+        projectpage.appendChild(TaskView(task).RegularView())
+    }
+
+    const OnTaskRemoved = (id) => {
+        let projectpage = document.querySelector('#' + project + '-' + id + '-page')
+        projectpage.removeChild(document.querySelector('#' + id + '-regular-card'))
+    }
+
+    return {RegularView, SidebarView, OnTaskAdded, OnTaskRemoved}
+}
+
+const ProjectController = (project) => {
+    const AddTask = (task) => {
+        project.AddTask(task)
+    }
+
+    let OnTaskAdded = null;
+
+    const RemoveTaskByObject = (task) => {
+        project.RemoveTaskByObject(task)
+    }
+
+    let OnTaskRemoved = null;
+
+    const RemoveTaskByIndex = (index) =>{
+        project.RemoveTaskByIndex(index)
+    }
+
+    return {AddTask, RemoveTaskByObject, RemoveTaskByIndex, OnTaskAdded, OnTaskRemoved}
+}
+
+function Portfolio(name){
+    this.projects = []
+    this.name = name
+    function GetProjectId(project){
+        for (let i = 0; i < this.projects.length; i++){
+            if(this.projects[i] == project) {return i}
+        }
+        return null
+    }
+
+    function AddProject(project){
+        this.projects.push(project)
+    }
+
+    function RemoveProjectByObject(project){
+        for (let i = 0; i < this.projects.length; i++){
+            if(this.projects[i] == project) {this.projects.splice(1, 0)}
+        }
+    }
+
+    function RemoveProjectByIndex(index){
+        this.projects.splice(index, 0 )
+    }
+}
+
+const PortfolioController = (portfolio) => {
+    const AddProject = (project) => {
+        portfolio.AddProject(project)
+    }
+
+    let OnProjectAdded = null;
+
+    const RemoveProjectByObject = (project) => {
+        portfolio.RemoveProjectByObject(project)
+    }
+
+    const RemoveProjectByIndex = (index) => {
+        portfolio.projects.splice(index, 0 )
+    }
+
+    return {AddProject, RemoveProjectByObject, RemoveProjectByIndex, OnProjectAdded}
+}
+
+const PortfolioView = (portfolio) => {
+
+    const RegularView = () => {
+        let portfoliopage = document.createElement('div')
+        portfoliopage.id = portfolio.name + '-page'
+
+        portfolio.projects.forEach((project)=>{
+            portfoliopage.appendChild(ProjectView(project))
+        })
+
+        return portfoliopage
+    }
+
+    const OnProjectAdded = (project) => {
+        let portfoliopage = document.querySelector('#' + portfolio.name + '-page')
+        portfoliopage.appendChild(ProjectView(project))
+    }
+
+    const OnProjectRemoved = (id) => {
+        let projectpage = document.querySelector('#' + portfolio.name + '-page')
+        projectpage.removeChild(document.querySelector('#' + id + '-regular-card'))
+    }
+
+    return {RegularView, OnProjectAdded, OnProjectRemoved}
+}
+
+
+export {Task, TaskView, Project, ProjectView, ProjectController, Portfolio, PortfolioController, PortfolioView}
