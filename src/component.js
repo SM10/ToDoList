@@ -1,12 +1,11 @@
-function Task(title) {
+function Task(title, id) {
     this.title= title
     this.description= ""
     this.dueDate = null
     this.priority = null
     this.notes= null
-    this.project = null
     this.iscomplete = null
-    this.id = null
+    this.id = id
 }
 
 const TaskView = (id) => {
@@ -52,9 +51,11 @@ const TaskView = (id) => {
 
         let label = document.createElement('label')
         label.setAttribute('for', 'task-' + value + '-' + id)
+        label.textContent = value
 
         innerviews[value] = document.createElement('input')
         innerviews[value].textContent = value
+        innerviews[value].type = 'radio'
         innerviews[value].value = value
         innerviews[value].name = propertyname
         innerviews[value].className = 'task-' + value + '-' + id
@@ -70,7 +71,7 @@ const TaskView = (id) => {
         innerviews.savebutton.textContent = 'Save'
         innerviews.savebutton.className = 'task-save'
         innerviews.savebutton.type = 'button'
-        innerviews.savebutton.form = formid
+        innerviews.savebutton.form_id = formid
         innerviews.savebutton.addEventListener('click', savefunction, false)
         
         return innerviews.savebutton
@@ -87,7 +88,7 @@ const TaskView = (id) => {
         innerviews.deletebutton.textContent = 'Delete'
         innerviews.deletebutton.className = 'task-delete'
         innerviews.deletebutton.type = 'button'
-        innerviews.deletebutton.form = formid
+        innerviews.deletebutton.form_id = formid
         return innerviews.deletebutton
     }
 
@@ -126,13 +127,15 @@ const TaskView = (id) => {
         
         return regularview
     }
-    return {GetNode, SetOnSaveButtonClickedListener, SetOnDeleteButtonClickedListener}
+    return {GetNode, SetOnSaveButtonClickedListener, SetOnDeleteButtonClickedListener, innerviews}
 }
 
-const TaskModel = (task) => {
+const TaskController = (task) => {
     let views = []
+    let project = null
     
     function AddView(view){
+        view.GetNode();
         views.push(view)
         view.SetOnSaveButtonClickedListener(OnSave)
         view.SetOnDeleteButtonClickedListener(OnDelete)
@@ -144,14 +147,19 @@ const TaskModel = (task) => {
         })
     }
 
-    function OnSave(args){
-        task.title= args.title
-        task.description= args.description
-        task.dueDate = args.dueDate
-        task.priority = args.priority
-        task.notes= args.notes
-        task.project = args.project
-        task.iscomplete = args.iscomplete
+    function OnSave(){
+        views.forEach((view) => {
+            task.title= view.innerviews.title.textContent
+            task.description= view.innerviews.description.textContent
+            task.dueDate = view.innerviews.dueDate.textContent
+
+            if(view.innerviews.high.ischecked) task.priority = 'high'
+            if(view.innerviews.normal.ischecked) task.priority = 'normal'
+            if(view.innerviews.low.ischecked) task.priority = 'low'
+
+            task.notes= view.innerviews.notes.textContent
+            task.iscomplete = view.innerviews.iscomplete.ischecked
+        })
     }
 
     function SetID(id){
@@ -165,114 +173,147 @@ const TaskModel = (task) => {
     return {AddView, SetID, GetID}
 }
 
-function Project(name){
-    this.tasks = []
+function Project(name, id){
+    this.taskcontrollers = []
     this.name = name
+    this.id = id
+}
 
-    function GetTaskId(task){
-        for (let i = 0; i < this.tasks.length; i++){
-            if(this.tasks[i] == task) {return i}
-        }
-        return null
-    }
+Project.prototype.AddTaskController = function(taskcontroller){
+    this.taskcontrollers.push(taskcontroller)
+    taskcontroller.project = this
+}
 
-    function AddTask(task){
-        this.tasks.push(task)
-    }
-
-    function RemoveTaskByObject(task){
-        for(let i = 0; i < this.tasks.length; i++){
-            if(this.tasks[i] === task) {this.tasks.splice(i, 0)}
-        }
-    }
-
-    function RemoveTaskByIndex(index){
-        this.tasks.splice(index,0)
+Project.prototype.RemoveProjectByObject = function (taskcontroller){
+    for(let i = 0; i < this.taskcontrollers.length; i++){
+        if(this.taskscontroller[i] === taskcontroller) {this.tasks.splice(i, 0)}
+        taskcontroller.project = null
     }
 }
 
-const ProjectView = (project, id) => {
+Project.prototype.RemoveProjectByIndex = function RemoveTaskByIndex(index){
+    this.taskcontrollers[index].project = null
+    this.taskcontrollers.splice(index,0)
+}
 
-    const RegularView = () => {
-        let projectpage = document.createElement('div')
-        projectpage.classname = 'project-regular-card'
-        projectpage.id = project + '-' + id + '-page'
-        
-        let projecttitle = document.createElement('div')
-        projecttitle.textContent = project.name
-        projectpage.appendChild(projecttitle)
 
-        let addtaskbutton = document.createElement('button')
-        addtaskbutton.textContent = 'Add Task'
-        addtaskbutton.className = 'add-task-button project-lv-button'
-        addtaskbutton.id = project + '-' + id + '-add-task'
-        projectpage.appendChild(addtaskbutton)
+const ProjectView = (project) => {
+    let node = null
+    let addtaskfunction = null
+    let deleteprojectfunction = null
 
-        let deleteproject = document.createElement('button')
-        deleteproject.textContent = 'Delete Project'
-        deleteproject.className = 'add-task-button project-lv-button'
-        deleteproject.id = project + '-' + id + '-delete-project'
-        projectpage.appendChild(deleteproject)
-
-        let expandicon = document.createElement('img')
-        expandicon.className = 'project-lv-icon'
-        expandicon.id = project + '-' + id + '-expand-project'
-        projectpage.appendChild(expandicon)
-
-        project.tasks.forEach((task)=>{
-            projectpage.appendChild(TaskView(task).RegularView())
-        })
-
-        return projectpage
+    let innerviews = {
+        projecttitle : null,
+        addtaskbutton : null,
+        deleteprojectbutton : null,
+        expandicon : null
     }
 
-    const SidebarView = () => {
-        let projectpage = document.createElement('div')
-        projectpage.classname = 'project-side-card'
+    const GetNode = () => {
+        if (node == null){
+            let projectpage = document.createElement('div')
+            projectpage.classname = 'project-regular-card'
+            projectpage.id = project.id + '-page'
+            node = projectpage
+            
+            let projecttitle = document.createElement('div')
+            projecttitle.textContent = project.name
+            innerviews.projecttitle = projecttitle
+            projectpage.appendChild(projecttitle)
 
-        let expandicon = document.createElement('img')
-        expandicon.className = 'project-lv-icon'
-        expandicon.id = project + '-' + id + '-expand-project-side'
-        projectpage.appendChild(expandicon)
+            let addtaskbutton = document.createElement('button')
+            addtaskbutton.textContent = 'Add Task'
+            addtaskbutton.className = 'add-task-button project-lv-button'
+            addtaskbutton.id = project.id + '-add-task'
+            innerviews.addtaskbutton = addtaskbutton
+            projectpage.appendChild(addtaskbutton)
 
-        let projecttitle = document.createElement('div')
-        projecttitle.textContent = project.name
-        project.tasks.forEach((task)=>{
-            projectpage.appendChild(TaskView(task).SidebarView())
-        })
+            let deleteproject = document.createElement('button')
+            deleteproject.textContent = 'Delete Project'
+            deleteproject.className = 'add-task-button project-lv-button'
+            deleteproject.id = project.id + '-delete-project'
+            innerviews.deleteprojectbutton = deleteproject
+            projectpage.appendChild(deleteproject)
+
+            let expandicon = document.createElement('img')
+            expandicon.className = 'project-lv-icon'
+            expandicon.id = project.id + '-expand-project'
+            innerviews.expandicon = expandicon
+            projectpage.appendChild(expandicon)
+
+            project.taskcontrollers.forEach((taskcontroller)=>{
+                AddTask(taskcontroller)
+            })
+
+            return projectpage
+        }
+        return node;
     }
 
-    const OnTaskAdded = (task) => {
-        let projectpage = document.querySelector('#' + project + '-' + id + '-page')
-        projectpage.appendChild(TaskView(task).RegularView())
+    const SetOnAddTaskButtonClickedListener = function(onAddTaskButtonClicked){
+        innerviews.addtaskbutton.removeEventListener('click', addtaskfunction, false)
+        addtaskfunction = onAddTaskButtonClicked
+        innerviews.addtaskbutton.addEventListener('click', addtaskfunction, false)
     }
 
-    const OnTaskRemoved = (id) => {
-        let projectpage = document.querySelector('#' + project + '-' + id + '-page')
-        projectpage.removeChild(document.querySelector('#' + id + '-regular-card'))
+    const SetOnDeleteButtonClickedListener = function(onDeleteButtonClicked){
+        innerviews.deleteprojectbutton.removeEventListener('click', deleteprojectfunction, false)
+        deleteprojectfunction = onDeleteButtonClicked
+        innerviews.deletebutton.addEventListener('click', deleteprojectfunction, false)
     }
 
-    return {RegularView, SidebarView, OnTaskAdded, OnTaskRemoved}
+    const AddTask = function(taskcontroller){
+        node.appendChild(TaskView(taskcontroller.GetID()).GetNode())
+    }
+
+    const RemoveTask = function(taskcontroller){
+        taskcontroller.OnDelete()
+    }
+
+    return {GetNode, SetOnAddTaskButtonClickedListener, SetOnDeleteButtonClickedListener, AddTask, RemoveTask}
 }
 
 const ProjectController = (project) => {
-    const AddTask = (task) => {
-        project.AddTask(task)
+    let views = []
+
+    const AddView = function(view){
+        view.GetNode()
+        views.push(view)
+        view.SetOnAddTaskButtonClickedListener(() =>{
+            let newtask = new Task('', crypto.randomUUID())
+            AddTask(newtask)
+        })
     }
 
-    let OnTaskAdded = null;
+    const AddTask = function(task){
+        let taskcontroller = TaskController(task)
+        taskcontroller.project = this
+        project.AddTaskController(taskcontroller)
 
-    const RemoveTaskByObject = (task) => {
-        project.RemoveTaskByObject(task)
+        OnTaskAdded(taskcontroller)
     }
 
-    let OnTaskRemoved = null;
+    let OnTaskAdded = function(taskcontroller){
+        views.forEach(view => {
+            view.AddTask(taskcontroller)
+        })
+    };
+
+    const RemoveTaskByObject = (taskcontroller) => {
+        views.forEach((view) => {
+            view.RemoveTask(taskcontroller)
+        })
+        project.RemoveTaskByObject(taskcontroller)
+    }
 
     const RemoveTaskByIndex = (index) =>{
+        views.forEach((view) => {
+            view.RemoveTask(project.taskcontrollers[index].OnDelete)
+        })
         project.RemoveTaskByIndex(index)
     }
 
-    return {AddTask, RemoveTaskByObject, RemoveTaskByIndex, OnTaskAdded, OnTaskRemoved}
+    return {AddTask, RemoveTaskByObject, RemoveTaskByIndex, AddView}
 }
 
 function Portfolio(name){
@@ -345,4 +386,4 @@ const PortfolioView = (portfolio) => {
 }
 
 
-export {Task, TaskView, Project, ProjectView, ProjectController, Portfolio, PortfolioController, PortfolioView}
+export {Task, TaskView, TaskController, Project, ProjectView, ProjectController, Portfolio, PortfolioController, PortfolioView}
