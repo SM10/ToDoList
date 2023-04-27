@@ -1,6 +1,6 @@
 import './personal_logo.jpg'
 import './style.css'
-import {Task, TaskView, Project, ProjectView, ProjectController, Portfolio, PortfolioController, PortfolioView, TaskController} from './component.js'
+import {Project, Portfolio, PortfolioController, PortfolioView} from './component.js'
 
 let testportfolio = new Portfolio(crypto.randomUUID())
 let testcontroller = PortfolioController(testportfolio)
