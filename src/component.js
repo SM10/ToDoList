@@ -78,7 +78,7 @@ const TaskView = (id) => {
     }
 
     const SetOnSaveButtonClickedListener = function(onSaveButtonClicked){
-        innerviews.savebutton.removeEventListener('click', savefunction, false)
+        if(innerviews.savebutton != null){innerviews.savebutton.removeEventListener('click', savefunction, false)}
         savefunction = onSaveButtonClicked
         innerviews.savebutton.addEventListener('click', onSaveButtonClicked, false)
     }
@@ -93,7 +93,7 @@ const TaskView = (id) => {
     }
 
     const SetOnDeleteButtonClickedListener = function(onDeleteButtonClicked){
-        innerviews.deletebutton.removeEventListener('click', deletefunction, false)
+        if(innerviews.deletebutton != null) {innerviews.deletebutton.removeEventListener('click', deletefunction, false)}
         deletefunction = onDeleteButtonClicked
         innerviews.deletebutton.addEventListener('click', deletefunction, false)
     }
@@ -117,6 +117,10 @@ const TaskView = (id) => {
         form.appendChild(CreateRadio(id  + 'lowpriority', 'priority', 'low'))
         form.appendChild(CreateNode(id  + 'notes', 'notes', 'text'))
         form.appendChild(CreateNode(id  + 'iscomplete', 'iscomplete', 'checkbox'))
+        let label = document.createElement('label')
+        label.setAttribute('for', 'task-' + 'iscomplete' + '-' + id)
+        label.textContent = 'Completed'
+        form.appendChild(label)
         form.appendChild(CreateSaveButton(form.id))
         form.appendChild(CreateDeleteButton(form.id))
 
@@ -139,9 +143,10 @@ const TaskController = (task) => {
         views.push(view)
         view.SetOnSaveButtonClickedListener(OnSave)
         view.SetOnDeleteButtonClickedListener(OnDelete)
+        console.log(views)
     }
 
-    function OnDelete(){
+    const OnDelete = () => {
         views.forEach(view => {
             view.GetNode().remove()
         })
@@ -170,7 +175,7 @@ const TaskController = (task) => {
         return task.id
     }
 
-    return {AddView, SetID, GetID}
+    return {AddView, SetID, GetID, project}
 }
 
 function Project(name, id){
@@ -242,7 +247,9 @@ const ProjectView = (project) => {
             projectpage.appendChild(expandicon)
 
             project.taskcontrollers.forEach((taskcontroller)=>{
-                AddTask(taskcontroller)
+                let tv = TaskView(taskcontroller)
+                taskcontroller.AddView(tv)
+                AddTaskView(tv)
             })
 
             return projectpage
@@ -259,18 +266,18 @@ const ProjectView = (project) => {
     const SetOnDeleteButtonClickedListener = function(onDeleteButtonClicked){
         innerviews.deleteprojectbutton.removeEventListener('click', deleteprojectfunction, false)
         deleteprojectfunction = onDeleteButtonClicked
-        innerviews.deletebutton.addEventListener('click', deleteprojectfunction, false)
+        innerviews.deleteprojectbutton.addEventListener('click', deleteprojectfunction, false)
     }
 
-    const AddTask = function(taskcontroller){
-        node.appendChild(TaskView(taskcontroller.GetID()).GetNode())
+    const AddTaskView = function(taskview){
+        node.appendChild(taskview.GetNode())
     }
 
-    const RemoveTask = function(taskcontroller){
-        taskcontroller.OnDelete()
+    const RemoveView = function(){
+        node.remove()
     }
 
-    return {GetNode, SetOnAddTaskButtonClickedListener, SetOnDeleteButtonClickedListener, AddTask, RemoveTask}
+    return {GetNode, SetOnAddTaskButtonClickedListener, SetOnDeleteButtonClickedListener, AddTaskView, RemoveView}
 }
 
 const ProjectController = (project) => {
@@ -282,6 +289,11 @@ const ProjectController = (project) => {
         view.SetOnAddTaskButtonClickedListener(() =>{
             let newtask = new Task('', crypto.randomUUID())
             AddTask(newtask)
+        })
+        view.SetOnDeleteButtonClickedListener(() => {
+            views.forEach((dview) => {
+                dview.RemoveView()
+            })
         })
     }
 
@@ -295,7 +307,9 @@ const ProjectController = (project) => {
 
     let OnTaskAdded = function(taskcontroller){
         views.forEach(view => {
-            view.AddTask(taskcontroller)
+            let tv = TaskView(taskcontroller)
+            taskcontroller.AddView(tv)
+            view.AddTaskView(tv)
         })
     };
 
