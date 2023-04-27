@@ -8,6 +8,10 @@ function Task(title, id) {
     this.id = id
 }
 
+Task.prototype.Delete = function(){
+    delete this
+}
+
 const TaskView = (id) => {
     const innerviews = {
         title : null,
@@ -143,7 +147,6 @@ const TaskController = (task) => {
         views.push(view)
         view.SetOnSaveButtonClickedListener(OnSave)
         view.SetOnDeleteButtonClickedListener(OnDelete)
-        console.log(views)
     }
 
     const OnDelete = () => {
@@ -180,8 +183,9 @@ const TaskController = (task) => {
 
 function Project(name, id){
     this.taskcontrollers = []
-    this.name = name
+    this.title = name
     this.id = id
+    this.portfolio = null
 }
 
 Project.prototype.AddTaskController = function(taskcontroller){
@@ -201,8 +205,12 @@ Project.prototype.RemoveProjectByIndex = function RemoveTaskByIndex(index){
     this.taskcontrollers.splice(index,0)
 }
 
+Project.prototype.Delete = function (){
+    delete this
+}
 
-const ProjectView = (project) => {
+
+const ProjectView = (id) => {
     let node = null
     let addtaskfunction = null
     let deleteprojectfunction = null
@@ -218,39 +226,33 @@ const ProjectView = (project) => {
         if (node == null){
             let projectpage = document.createElement('div')
             projectpage.classname = 'project-regular-card'
-            projectpage.id = project.id + '-page'
+            projectpage.id = id + '-page'
             node = projectpage
             
             let projecttitle = document.createElement('div')
-            projecttitle.textContent = project.name
+            projecttitle.id = id + '-title'
             innerviews.projecttitle = projecttitle
             projectpage.appendChild(projecttitle)
 
             let addtaskbutton = document.createElement('button')
             addtaskbutton.textContent = 'Add Task'
             addtaskbutton.className = 'add-task-button project-lv-button'
-            addtaskbutton.id = project.id + '-add-task'
+            addtaskbutton.id = id + '-add-task'
             innerviews.addtaskbutton = addtaskbutton
             projectpage.appendChild(addtaskbutton)
 
             let deleteproject = document.createElement('button')
             deleteproject.textContent = 'Delete Project'
             deleteproject.className = 'add-task-button project-lv-button'
-            deleteproject.id = project.id + '-delete-project'
+            deleteproject.id = id + '-delete-project'
             innerviews.deleteprojectbutton = deleteproject
             projectpage.appendChild(deleteproject)
 
             let expandicon = document.createElement('img')
             expandicon.className = 'project-lv-icon'
-            expandicon.id = project.id + '-expand-project'
+            expandicon.id = id + '-expand-project'
             innerviews.expandicon = expandicon
             projectpage.appendChild(expandicon)
-
-            project.taskcontrollers.forEach((taskcontroller)=>{
-                let tv = TaskView(taskcontroller)
-                taskcontroller.AddView(tv)
-                AddTaskView(tv)
-            })
 
             return projectpage
         }
@@ -277,7 +279,7 @@ const ProjectView = (project) => {
         node.remove()
     }
 
-    return {GetNode, SetOnAddTaskButtonClickedListener, SetOnDeleteButtonClickedListener, AddTaskView, RemoveView}
+    return {GetNode, SetOnAddTaskButtonClickedListener, SetOnDeleteButtonClickedListener, AddTaskView, RemoveView, innerviews}
 }
 
 const ProjectController = (project) => {
@@ -285,16 +287,24 @@ const ProjectController = (project) => {
 
     const AddView = function(view){
         view.GetNode()
+        view.innerviews.projecttitle.textContent = project.title
+        project.taskcontrollers.forEach((taskcontroller)=>{
+            let tv = TaskView(taskcontroller)
+            taskcontroller.AddView(tv)
+            view.AddTaskView(tv)
+        })
         views.push(view)
         view.SetOnAddTaskButtonClickedListener(() =>{
             let newtask = new Task('', crypto.randomUUID())
             AddTask(newtask)
         })
         view.SetOnDeleteButtonClickedListener(() => {
-            views.forEach((dview) => {
-                dview.RemoveView()
-            })
+            OnDelete()
         })
+    }
+
+    const GetID = () => {
+        return project.id
     }
 
     const AddTask = function(task){
@@ -303,6 +313,14 @@ const ProjectController = (project) => {
         project.AddTaskController(taskcontroller)
 
         OnTaskAdded(taskcontroller)
+    }
+
+    const OnDelete = function(){
+        views.forEach((dview) => {
+            dview.RemoveView()
+        })
+        if(project.portfolio != null) project.portfolio.RemoveProjectByObject(project)
+        project.Delete()
     }
 
     let OnTaskAdded = function(taskcontroller){
@@ -327,76 +345,101 @@ const ProjectController = (project) => {
         project.RemoveTaskByIndex(index)
     }
 
-    return {AddTask, RemoveTaskByObject, RemoveTaskByIndex, AddView}
+    const SetPortfolio = (portfolio) => {
+        project.portfolio = portfolio
+    }
+
+    return {AddTask, RemoveTaskByObject, RemoveTaskByIndex, AddView, GetID, SetPortfolio}
 }
 
-function Portfolio(name){
-    this.projects = []
-    this.name = name
-    function GetProjectId(project){
-        for (let i = 0; i < this.projects.length; i++){
-            if(this.projects[i] == project) {return i}
-        }
-        return null
-    }
+function Portfolio(id){
+    this.projectcontrollers = []
+    this.id = id
+}
 
-    function AddProject(project){
-        this.projects.push(project)
-    }
+Portfolio.prototype.AddProjectController = function(projectcontroller){
+    this.projectcontrollers.push(projectcontroller)
+}
 
-    function RemoveProjectByObject(project){
-        for (let i = 0; i < this.projects.length; i++){
-            if(this.projects[i] == project) {this.projects.splice(1, 0)}
-        }
-    }
-
-    function RemoveProjectByIndex(index){
-        this.projects.splice(index, 0 )
+Portfolio.prototype.RemoveProjectByObject = function(projectcontroller){
+    for (let i = 0; i < this.projectcontrollers.length; i++){
+        if(this.projectcontrollers[i] == projectcontroller) {this.projectcontrollers.splice(1, 0)}
     }
 }
+
+Portfolio.prototype.RemoveProjectByIndex = function(index){
+    this.projectcontrollers.splice(index, 0 )
+}
+
+const PortfolioView = (id) => {
+    let node = null;
+
+    function GetNode(){
+        if(node == null){
+        let portfoliopage = document.createElement('div')
+        portfoliopage.id = id + '-page'
+
+        node = portfoliopage
+        return portfoliopage
+    }
+        return node
+    }
+
+    const AddProjectView = (projectview) => {
+        node.appendChild(projectview.GetNode())
+    }
+
+    const RemoveProjectView = (id) => {
+        node.removeChild(document.querySelector('#' + id + '-regular-card'))
+    }
+
+    return {GetNode, AddProjectView, RemoveProjectView}
+}
+
 
 const PortfolioController = (portfolio) => {
-    const AddProject = (project) => {
-        portfolio.AddProject(project)
+    let views = []
+
+    const GetID = () => {
+        return portfolio.id
     }
 
-    let OnProjectAdded = null;
+    const AddProject = (project) => {
+        let pc = ProjectController(project)
+        portfolio.AddProjectController(pc)
+        OnProjectAdded(pc)
+    }
 
-    const RemoveProjectByObject = (project) => {
-        portfolio.RemoveProjectByObject(project)
+    const AddView = (view) => {
+        portfolio.projectcontrollers.forEach((projectcontroller)=>{
+            let pv = ProjectView(projectcontroller.GetID())
+            view.GetNode().appendChild(pv.GetNode())
+            projectcontroller.AddView(pv)
+        })
+        views.push(view)
+    }
+
+    let OnProjectAdded = function(projectcontroller){
+        let pv = ProjectView(projectcontroller.GetID())
+        projectcontroller.AddView(pv)
+        projectcontroller.SetPortfolio(this)
+        views.forEach((view) => {
+            view.AddProjectView(pv)
+        })
+    }
+
+    const RemoveProjectByObject = (projectcontroller) => {
+        views.forEach((view) => {
+            view.RemoveProjectView(projectcontroller.GetID())
+        })
+        portfolio.RemoveProjectByObject(projectcontroller)
     }
 
     const RemoveProjectByIndex = (index) => {
         portfolio.projects.splice(index, 0 )
     }
 
-    return {AddProject, RemoveProjectByObject, RemoveProjectByIndex, OnProjectAdded}
-}
-
-const PortfolioView = (portfolio) => {
-
-    const RegularView = () => {
-        let portfoliopage = document.createElement('div')
-        portfoliopage.id = portfolio.name + '-page'
-
-        portfolio.projects.forEach((project)=>{
-            portfoliopage.appendChild(ProjectView(project))
-        })
-
-        return portfoliopage
-    }
-
-    const OnProjectAdded = (project) => {
-        let portfoliopage = document.querySelector('#' + portfolio.name + '-page')
-        portfoliopage.appendChild(ProjectView(project))
-    }
-
-    const OnProjectRemoved = (id) => {
-        let projectpage = document.querySelector('#' + portfolio.name + '-page')
-        projectpage.removeChild(document.querySelector('#' + id + '-regular-card'))
-    }
-
-    return {RegularView, OnProjectAdded, OnProjectRemoved}
+    return {AddProject, AddView, RemoveProjectByObject, RemoveProjectByIndex, OnProjectAdded, GetID}
 }
 
 
