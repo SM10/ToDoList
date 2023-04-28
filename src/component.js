@@ -32,7 +32,7 @@ const TaskView = (id) => {
 
     const CreateNode = function(id, propertyname, inputtype){
         let ret = document.createElement('div')
-        ret.className = 'inputholder'
+        ret.className = id +propertyname + inputtype
 
         let label = document.createElement('label')
         label.setAttribute('for', 'task-' + propertyname + '-' + id)
@@ -135,13 +135,13 @@ const TaskView = (id) => {
         
         return regularview
     }
-    return {GetNode, SetOnSaveButtonClickedListener, SetOnDeleteButtonClickedListener, innerviews}
+    return {GetNode, SetOnSaveButtonClickedListener, SetOnDeleteButtonClickedListener, innerviews, CreateNode}
 }
 
 
-const SideTaskView = (id) => {
+const TaskSideView = (id) => {
     let node = null
-    const {taskview} = TaskView(id)
+    const {CreateNode, innerviews} = TaskView(id)
 
     const GetNode = () =>{
         if(node == null){
@@ -149,8 +149,8 @@ const SideTaskView = (id) => {
             card.className = 'task-card task-side-card'
             card.id = id + '-regular-card'
 
-            card.appendChild(taskview.CreateNode(id + 'title', 'title', 'text'))
-            card.appendChild(taskview.CreateNode(id  + 'iscomplete', 'iscomplete', 'checkbox'))
+            card.appendChild(CreateNode(id + 'title', 'title', 'text'))
+            card.appendChild(CreateNode(id  + 'iscomplete', 'iscomplete', 'checkbox'))
 
             node = card
             return card
@@ -307,7 +307,7 @@ const ProjectView = (id) => {
 
 const ProjectSideview = (id) => {
     let node = null;
-    const {projectview} = ProjectView(id)
+    const {RemoveView, innerviews, AddTaskView} = ProjectView(id)
 
     const GetNode = () => {
         if (node == null){
@@ -332,7 +332,7 @@ const ProjectSideview = (id) => {
         return node;
     }
 
-    return {GetNode, innerviews}
+    return {GetNode, innerviews, RemoveView, AddTaskView}
 }
 
 const ProjectController = (project) => {
@@ -342,9 +342,7 @@ const ProjectController = (project) => {
         view.GetNode()
         view.innerviews.projecttitle.textContent = project.title
         project.taskcontrollers.forEach((taskcontroller)=>{
-            let tv = TaskView(taskcontroller)
-            taskcontroller.AddView(tv)
-            view.AddTaskView(tv)
+            AttachTaskViewsToView(view, taskcontroller)
         })
         views.push(view)
         view.SetOnAddTaskButtonClickedListener(() =>{
@@ -354,6 +352,19 @@ const ProjectController = (project) => {
         view.SetOnDeleteButtonClickedListener(() => {
             OnDelete()
         })
+    }
+
+    const AttachTaskViewsToView = function(view, taskcontroller){
+        if(view instanceof ProjectSideview){
+            let sv = TaskSideView(taskcontroller.GetID())
+            taskcontroller.AddView(sv)
+            view.AddTaskView(sv)
+
+        }else if(view instanceof ProjectView){
+            let tv = TaskView(taskcontroller.GetID())
+            taskcontroller.AddView(tv)
+            view.AddTaskView(tv)
+        }
     }
 
     const GetID = () => {
