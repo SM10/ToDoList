@@ -138,6 +138,29 @@ const TaskView = (id) => {
     return {GetNode, SetOnSaveButtonClickedListener, SetOnDeleteButtonClickedListener, innerviews}
 }
 
+
+const SideTaskView = (id) => {
+    let node = null
+    const {taskview} = TaskView(id)
+
+    const GetNode = () =>{
+        if(node == null){
+            let card = document.createElement('div')
+            card.className = 'task-card task-side-card'
+            card.id = id + '-regular-card'
+
+            card.appendChild(taskview.CreateNode(id + 'title', 'title', 'text'))
+            card.appendChild(taskview.CreateNode(id  + 'iscomplete', 'iscomplete', 'checkbox'))
+
+            node = card
+            return card
+        }
+        return node
+    }
+
+    return {GetNode, innerviews}
+}
+
 const TaskController = (task) => {
     let views = []
     let project = null
@@ -280,6 +303,36 @@ const ProjectView = (id) => {
     }
 
     return {GetNode, SetOnAddTaskButtonClickedListener, SetOnDeleteButtonClickedListener, AddTaskView, RemoveView, innerviews}
+}
+
+const ProjectSideview = (id) => {
+    let node = null;
+    const {projectview} = ProjectView(id)
+
+    const GetNode = () => {
+        if (node == null){
+            let projectpage = document.createElement('div')
+            projectpage.classname = 'project-side-card'
+            projectpage.id = id + '-page'
+            node = projectpage
+            
+            let projecttitle = document.createElement('div')
+            projecttitle.id = id + '-title'
+            projectview.innerviews.projecttitle = projecttitle
+            projectpage.appendChild(projecttitle)
+
+            let expandicon = document.createElement('img')
+            expandicon.className = 'project-lv-side-icon'
+            expandicon.id = id + '-expand-project'
+            projectview.innerviews.expandicon = expandicon
+            projectpage.appendChild(expandicon)
+
+            return projectpage
+        }
+        return node;
+    }
+
+    return {GetNode, innerviews}
 }
 
 const ProjectController = (project) => {
