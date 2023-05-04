@@ -1,4 +1,5 @@
-function Task(title, id) {
+class Task{
+    constructor(title,id){
     this.title= title
     this.description= ""
     this.dueDate = null
@@ -6,10 +7,11 @@ function Task(title, id) {
     this.notes= null
     this.iscomplete = null
     this.id = id
+    }
 }
 
-Task.prototype.Delete = function(){
-    delete this
+Task.prototype.SetValue = (propertyname, value) => {
+    this[propertyname] = value
 }
 
 const TaskView = (id) => {
@@ -75,7 +77,7 @@ const TaskView = (id) => {
         innerviews.savebutton.textContent = 'Save'
         innerviews.savebutton.className = 'task-save'
         innerviews.savebutton.type = 'button'
-        innerviews.savebutton.form_id = formid
+        innerviews.savebutton.id = formid
         innerviews.savebutton.addEventListener('click', savefunction, false)
         
         return innerviews.savebutton
@@ -92,7 +94,7 @@ const TaskView = (id) => {
         innerviews.deletebutton.textContent = 'Delete'
         innerviews.deletebutton.className = 'task-delete'
         innerviews.deletebutton.type = 'button'
-        innerviews.deletebutton.form_id = formid
+        innerviews.deletebutton.id = formid
         return innerviews.deletebutton
     }
 
@@ -125,8 +127,8 @@ const TaskView = (id) => {
         label.setAttribute('for', 'task-' + 'iscomplete' + '-' + id)
         label.textContent = 'Completed'
         form.appendChild(label)
-        form.appendChild(CreateSaveButton(form.id))
-        form.appendChild(CreateDeleteButton(form.id))
+        form.appendChild(CreateSaveButton(id + '-save'))
+        form.appendChild(CreateDeleteButton(id + '-delete'))
 
         regularview = card
 
@@ -158,7 +160,10 @@ const TaskSideView = (id) => {
         return node
     }
 
-    return {GetNode, innerviews}
+    const SetOnSaveButtonClickedListener = (event) => {}
+    const SetOnDeleteButtonClickedListener = (event) => {}
+
+    return {GetNode, innerviews, SetOnSaveButtonClickedListener, SetOnDeleteButtonClickedListener}
 }
 
 const TaskController = (task) => {
@@ -178,30 +183,46 @@ const TaskController = (task) => {
         })
     }
 
-    function OnSave(){
+    function OnSave(event){
         views.forEach((view) => {
-            task.title= view.innerviews.title.textContent
-            task.description= view.innerviews.description.textContent
-            task.dueDate = view.innerviews.dueDate.textContent
+          if(view.innerviews.savebutton != null && event.target.id == view.innerviews.savebutton.id){
+            task.title = view.innerviews.title.value
+            task.description = view.innerviews.description.value
+            task.dueDate = view.innerviews.dueDate.value
+            if(view.innerviews.high.value) task.priority= 'high'
+            if(view.innerviews.normal.value) task.priority = 'normal'
+            if(view.innerviews.low.value) task.priority = 'low'
 
-            if(view.innerviews.high.ischecked) task.priority = 'high'
-            if(view.innerviews.normal.ischecked) task.priority = 'normal'
-            if(view.innerviews.low.ischecked) task.priority = 'low'
-
-            task.notes= view.innerviews.notes.textContent
-            task.iscomplete = view.innerviews.iscomplete.ischecked
+            task.notes = view.innerviews.notes.value
+            task.iscomplete = view.innerviews.iscomplete.checked
+          }
         })
-    }
 
-    function SetID(id){
-        task.id = id
+        console.log(task.title)
+        console.log(task.description)
+        console.log(task.dueDate)
+        console.log(task.priority)
+        console.log(task.notes)
+        console.log(task.iscomplete)
+
+        views.forEach((view) => {
+            
+            if(view.innerviews.title != null) view.innerviews.title.value = task.title
+            if(view.innerviews.description != null) view.innerviews.description.value = task.description
+            if(view.innerviews.dueDate != null) view.innerviews.dueDate.value = task.dueDate 
+
+            if(view.innerviews[task.priority] != null) {view.innerviews[task.priority].value = task.iscomplete}
+
+            if(view.innerviews.notes != null) view.innerviews.notes.value = task.notes
+            if(view.innerviews.iscomplete != null) view.innerviews.iscomplete.checked = task.iscomplete
+        })
     }
 
     function GetID(){
         return task.id
     }
 
-    return {AddView, SetID, GetID, project}
+    return {AddView, GetID, project}
 }
 
 function Project(name, id){
@@ -305,50 +326,51 @@ const ProjectView = (id) => {
     return {GetNode, SetOnAddTaskButtonClickedListener, SetOnDeleteButtonClickedListener, AddTaskView, RemoveView, innerviews}
 }
 
-const ProjectSideView = (id) => {
-    let node = null;
-    let deleteprojectfunction = null;
-    const {RemoveView, innerviews, addtaskfunction} = ProjectView(id)
+class ProjectSideView{
+    constructor(id){
+        this.id = id
+        this.node = null;
+        this.deleteprojectfunction = null;
+        this.innerviews = ProjectView(id).innerviews
+    }
 
-    const GetNode = () => {
-        if (node == null){
+    GetNode(){
+        if (this.node == null){
             let projectpage = document.createElement('div')
             projectpage.classname = 'project-side-card'
-            projectpage.id = id + '-page'
+            projectpage.id = this.id + '-page'
             
             let projecttitle = document.createElement('div')
-            projecttitle.id = id + '-title'
-            innerviews.projecttitle = projecttitle
+            projecttitle.id = this.id + '-title'
+            this.innerviews.projecttitle = projecttitle
             projectpage.appendChild(projecttitle)
 
             let expandicon = document.createElement('img')
             expandicon.className = 'project-lv-side-icon'
-            expandicon.id = id + '-expand-project'
-            innerviews.expandicon = expandicon
+            expandicon.id = this.id + '-expand-project'
+            this.innerviews.expandicon = expandicon
             projectpage.appendChild(expandicon)
 
-            node = projectpage;
+            this.node = projectpage;
 
             return projectpage
         }
-        return node;
+        return this.node;
     }
 
-    const AddTaskView = function(taskview){
-        node.appendChild(taskview.GetNode())
+    AddTaskView(taskview){
+        this.node.appendChild(taskview.GetNode())
     }
 
-    const SetOnAddTaskButtonClickedListener = (fun) => {
+    SetOnAddTaskButtonClickedListener = (fun) => {
         //do nothing
     }
 
-    const SetOnDeleteButtonClickedListener = () => {
-        deleteprojectfunction = function(){
-            GetNode().remove()
+    SetOnDeleteButtonClickedListener (){
+        this.deleteprojectfunction = function(){
+            this.GetNode().remove()
         }
     }
-
-    return {GetNode, innerviews, RemoveView, AddTaskView, SetOnAddTaskButtonClickedListener, SetOnDeleteButtonClickedListener}
 }
 
 const ProjectController = (project) => {
@@ -397,7 +419,13 @@ const ProjectController = (project) => {
         project.AddTaskController(taskcontroller)
 
         views.forEach(view => {
-            let tv = TaskView(taskcontroller)
+            let tv;
+            console.log(view instanceof ProjectSideView);
+            if(view instanceof ProjectSideView){
+                tv = TaskSideView(taskcontroller.GetID())
+            }else{
+                tv = TaskView(taskcontroller.GetID())
+            }
             taskcontroller.AddView(tv)
             console.log(view.GetNode())
             console.log(tv.GetNode())
@@ -506,7 +534,7 @@ const PortfolioController = (portfolio) => {
                 projectcontroller.AddView(pv)
                 document.querySelector(key).appendChild(pv.GetNode())
             }else if (value === SMALL){
-                let psv = ProjectSideView(projectcontroller.GetID())
+                let psv = new ProjectSideView(projectcontroller.GetID())
                 projectcontroller.AddView(psv)
                 document.querySelector(key).appendChild(psv.GetNode())
             }
