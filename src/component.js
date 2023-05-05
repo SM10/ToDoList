@@ -258,12 +258,14 @@ const ProjectView = (id) => {
     let node = null
     let addtaskfunction = null
     let deleteprojectfunction = null
+    let titlepassfunction = null
 
     let innerviews = {
         projecttitle : null,
         addtaskbutton : null,
         deleteprojectbutton : null,
-        expandicon : null
+        expandicon : null,
+        saveprojectnamebutton : null
     }
 
     const GetNode = () => {
@@ -273,10 +275,18 @@ const ProjectView = (id) => {
             projectpage.id = id + '-page'
             node = projectpage
             
-            let projecttitle = document.createElement('div')
+            let projecttitle = document.createElement('input')
             projecttitle.id = id + '-title'
             innerviews.projecttitle = projecttitle
             projectpage.appendChild(projecttitle)
+
+            let saveprojectnamebutton = document.createElement('button')
+            saveprojectnamebutton.textContent = 'Save Title'
+            saveprojectnamebutton.className = '-save-title project-lv-button'
+            saveprojectnamebutton.id = id + '-save-title'
+            innerviews.saveprojectnamebutton = saveprojectnamebutton
+            saveprojectnamebutton.addEventListener('click', TitleSavedView, false)
+            projectpage.appendChild(saveprojectnamebutton)
 
             let addtaskbutton = document.createElement('button')
             addtaskbutton.textContent = 'Add Task'
@@ -315,6 +325,43 @@ const ProjectView = (id) => {
         innerviews.deleteprojectbutton.addEventListener('click', deleteprojectfunction, false)
     }
 
+    const TitleSavedView = function(){
+        let newtitle = innerviews.projecttitle.value
+        console.log(titlepassfunction)
+        if(titlepassfunction != null){
+            titlepassfunction(newtitle)
+        }
+        
+        let projecttitle = document.createElement('div')
+        projecttitle.id = id + '-title'
+        projecttitle.textContent = newtitle
+        innerviews.projecttitle.replaceWith(projecttitle)
+        innerviews.projecttitle = projecttitle
+
+        let saveprojectnamebutton = document.createElement('button')
+        saveprojectnamebutton.textContent = 'Change Title'
+        saveprojectnamebutton.className = '-change-title project-lv-button'
+        saveprojectnamebutton.id = id + '-change-title'
+        saveprojectnamebutton.addEventListener('click', ()=>{
+            let projecttitle = document.createElement('input')
+            projecttitle.id = id + '-title'
+            projecttitle.value = innerviews.projecttitle.textContent
+            innerviews.projecttitle.replaceWith(projecttitle)
+            innerviews.projecttitle = projecttitle
+
+            let saveprojectnamebutton = document.createElement('button')
+            saveprojectnamebutton.textContent = 'Save Title'
+            saveprojectnamebutton.className = '-save-title project-lv-button'
+            saveprojectnamebutton.id = id + '-save-title'
+            saveprojectnamebutton.addEventListener('click', TitleSavedView, false)
+            innerviews.saveprojectnamebutton.replaceWith(saveprojectnamebutton)
+            innerviews.saveprojectnamebutton = saveprojectnamebutton
+        }, false)
+        innerviews.saveprojectnamebutton.replaceWith(saveprojectnamebutton)
+        innerviews.saveprojectnamebutton = saveprojectnamebutton
+        
+    }
+
     const AddTaskView = function(taskview){
         node.appendChild(taskview.GetNode())
     }
@@ -323,7 +370,11 @@ const ProjectView = (id) => {
         node.remove()
     }
 
-    return {GetNode, SetOnAddTaskButtonClickedListener, SetOnDeleteButtonClickedListener, AddTaskView, RemoveView, innerviews}
+    function SetTitlePassFunction(titlepassfunc){
+        titlepassfunction = titlepassfunc;
+    }
+
+    return {GetNode, SetOnAddTaskButtonClickedListener, SetOnDeleteButtonClickedListener, AddTaskView, RemoveView, innerviews, SetTitlePassFunction}
 }
 
 class ProjectSideView{
@@ -371,6 +422,8 @@ class ProjectSideView{
             this.GetNode().remove()
         }
     }
+
+    SetTitlePassFunction () {}
 }
 
 const ProjectController = (project) => {
@@ -391,6 +444,12 @@ const ProjectController = (project) => {
         view.SetOnDeleteButtonClickedListener(() => {
             OnDelete()
         })
+        let titlepass = (title) => {
+            project.title = title
+            views.forEach(view => {
+                view.innerviews.projecttitle.textContent = title
+            })}
+        view.SetTitlePassFunction(titlepass)
     }
 
     const AttachTaskViewsToView = function(view, taskcontroller){
