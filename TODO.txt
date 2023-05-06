@@ -1,1 +1,2 @@
-fix labels. add storage system as per Odin Project.
+add storage system as per Odin Project.
+fix css for detail and side

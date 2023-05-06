@@ -31,22 +31,35 @@ const TaskView = (id) => {
     let savefunction = null
     let deletefunction = null
     let regularview = null
+    let viewmode = null
 
-    const CreateNode = function(id, propertyname, inputtype){
+    const CreateNode = function(id, labelname, propertyname, inputtype){
         let ret = document.createElement('div')
         ret.className = id +propertyname + inputtype
 
         let label = document.createElement('label')
         label.setAttribute('for', 'task-' + propertyname + '-' + id)
+        label.textContent = labelname
 
+        if(innerviews[propertyname] == null){
         innerviews[propertyname] = document.createElement('input')
         innerviews[propertyname].type = inputtype
         innerviews[propertyname].name = propertyname
         innerviews[propertyname].className = 'task-' + propertyname
         innerviews[propertyname].id = 'task-' + propertyname + '-' + id
+        }
 
         ret.appendChild(label)
         ret.appendChild(innerviews[propertyname])
+
+        return ret
+    }
+
+    const CreateDiv = function(id, textcontent, propertyname){
+        let ret = document.createElement('div')
+        ret.textContent = textcontent
+        ret.className = 'task-' + propertyname
+        ret.id = 'task-' + propertyname + '-' + id
 
         return ret
     }
@@ -83,10 +96,54 @@ const TaskView = (id) => {
         return innerviews.savebutton
     }
 
+    const CreateEditButton = function(formid){
+        innerviews.editbutton = document.createElement('button')
+        innerviews.editbutton.textContent = 'Edit'
+        innerviews.editbutton.className = 'task-save'
+        innerviews.editbutton.type = 'button'
+        innerviews.editbutton.id = formid
+        innerviews.editbutton.addEventListener('click', (event) =>{
+            viewmode.replaceWith(GetNode())
+            GetNode().appendChild(innerviews.deletebutton)
+        }, false)
+        
+        return innerviews.editbutton
+    }
+
+    const CreateViewNode = function(){
+            let card = document.createElement('div')
+            card.className = 'task-card task-regular-card'
+            card.id = id + '-regular-card'
+    
+            card.appendChild(CreateDiv(id, innerviews.title.value, 'title'))
+            card.appendChild(CreateDiv(id, innerviews.description.value, 'description'))
+            card.appendChild(CreateDiv(id, innerviews.dueDate.value, 'dueDate'))
+                if(innerviews.high.checked) card.appendChild(CreateDiv(id, innerviews.high.value, 'high'))
+                if(innerviews.normal.checked) card.appendChild(CreateDiv(id, innerviews.normal.value, 'normal'))
+                if(innerviews.low.checked) card.appendChild(CreateDiv(id, innerviews.low.value, 'low'))
+            card.appendChild(CreateDiv(id, innerviews.notes.value, 'notes'))
+            if(innerviews.iscomplete.checked == 'on') card.appendChild(CreateDiv(id, 'Completed', 'completed'))
+            card.appendChild(CreateEditButton(id + '-edit'))
+            let del = CreateDeleteButton(id + '-delete')
+            del.addEventListener('click', () => {
+                deletefunction()
+                card.remove()
+            })
+            card.appendChild(del)
+            
+            viewmode = card
+            return card
+    }
+
     const SetOnSaveButtonClickedListener = function(onSaveButtonClicked){
         if(innerviews.savebutton != null){innerviews.savebutton.removeEventListener('click', savefunction, false)}
-        savefunction = onSaveButtonClicked
-        innerviews.savebutton.addEventListener('click', onSaveButtonClicked, false)
+        savefunction = function(event){
+            console.log('check')
+            let v = CreateViewNode()
+            GetNode().replaceWith(v)
+            onSaveButtonClicked(event)
+        }
+        innerviews.savebutton.addEventListener('click', savefunction, false)
     }
 
     const CreateDeleteButton = function(formid){
@@ -97,7 +154,6 @@ const TaskView = (id) => {
         innerviews.deletebutton.id = formid
         return innerviews.deletebutton
     }
-
     const SetOnDeleteButtonClickedListener = function(onDeleteButtonClicked){
         if(innerviews.deletebutton != null) {innerviews.deletebutton.removeEventListener('click', deletefunction, false)}
         deletefunction = onDeleteButtonClicked
@@ -115,18 +171,14 @@ const TaskView = (id) => {
         form.id = id + '-form'
         card.appendChild(form)
 
-        form.appendChild(CreateNode(id + 'title', 'title', 'text'))
-        form.appendChild(CreateNode(id  + 'description', 'description', 'text'))
-        form.appendChild(CreateNode(id + 'dueDate', 'dueDate', 'date'))
+        form.appendChild(CreateNode(id + 'title','Title', 'title', 'text'))
+        form.appendChild(CreateNode(id  + 'description', 'Description', 'description', 'text'))
+        form.appendChild(CreateNode(id + 'dueDate', 'Due Date', 'dueDate', 'date'))
         form.appendChild(CreateRadio(id + 'highpriority', 'priority', 'high'))
         form.appendChild(CreateRadio(id  + 'normalpriority', 'priority', 'normal'))
         form.appendChild(CreateRadio(id  + 'lowpriority', 'priority', 'low'))
-        form.appendChild(CreateNode(id  + 'notes', 'notes', 'text'))
-        form.appendChild(CreateNode(id  + 'iscomplete', 'iscomplete', 'checkbox'))
-        let label = document.createElement('label')
-        label.setAttribute('for', 'task-' + 'iscomplete' + '-' + id)
-        label.textContent = 'Completed'
-        form.appendChild(label)
+        form.appendChild(CreateNode(id  + 'notes', 'Notes', 'notes', 'text'))
+        form.appendChild(CreateNode(id  + 'iscomplete', 'Completed', 'iscomplete', 'checkbox'))
         form.appendChild(CreateSaveButton(id + '-save'))
         form.appendChild(CreateDeleteButton(id + '-delete'))
 
@@ -137,13 +189,12 @@ const TaskView = (id) => {
         
         return regularview
     }
-    return {GetNode, SetOnSaveButtonClickedListener, SetOnDeleteButtonClickedListener, innerviews, CreateNode}
+    return {GetNode, SetOnSaveButtonClickedListener, SetOnDeleteButtonClickedListener, innerviews, CreateNode, CreateDiv}
 }
 
-
-const TaskSideView = (id) => {
-    let node = null
-    const {CreateNode, innerviews} = TaskView(id)
+const TaskSideView = (id) =>{
+    let node = null;
+    const {CreateNode, innerviews, CreateDiv} = TaskView(id)
 
     const GetNode = () =>{
         if(node == null){
@@ -151,8 +202,10 @@ const TaskSideView = (id) => {
             card.className = 'task-card task-side-card'
             card.id = id + '-regular-card'
 
-            card.appendChild(CreateNode(id + 'title', 'title', 'text'))
-            card.appendChild(CreateNode(id  + 'iscomplete', 'iscomplete', 'checkbox'))
+            innerviews.title = card.appendChild(CreateDiv(id + 'title', '', 'title'))
+            let check = CreateNode(id  + 'iscomplete', '', 'iscomplete', 'checkbox')
+            check.setAttribute('onclick', 'return false')
+            card.appendChild(check)
 
             node = card
             return card
@@ -198,16 +251,11 @@ const TaskController = (task) => {
           }
         })
 
-        console.log(task.title)
-        console.log(task.description)
-        console.log(task.dueDate)
-        console.log(task.priority)
-        console.log(task.notes)
-        console.log(task.iscomplete)
-
         views.forEach((view) => {
-            
-            if(view.innerviews.title != null) view.innerviews.title.value = task.title
+
+            if(view.innerviews.title != null) {
+                view.innerviews.title.textContent = task.title
+                view.innerviews.title.value = task.title }
             if(view.innerviews.description != null) view.innerviews.description.value = task.description
             if(view.innerviews.dueDate != null) view.innerviews.dueDate.value = task.dueDate 
 
