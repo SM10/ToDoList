@@ -1,3 +1,71 @@
+function storageAvailable(type) {
+    let storage;
+    try {
+      storage = window[type];
+      const x = "__storage_test__";
+      storage.setItem(x, x);
+      storage.removeItem(x);
+      return true;
+    } catch (e) {
+      return (
+        e instanceof DOMException &&
+        // everything except Firefox
+        (e.code === 22 ||
+          // Firefox
+          e.code === 1014 ||
+          // test name field too, because code might not be present
+          // everything except Firefox
+          e.name === "QuotaExceededError" ||
+          // Firefox
+          e.name === "NS_ERROR_DOM_QUOTA_REACHED") &&
+        // acknowledge QuotaExceededError only if there's something already stored
+        storage &&
+        storage.length !== 0
+      );
+    }
+  }
+
+const LocalStorageHandler = () => {
+    function SaveTaskToLocal(task, projectname) {
+        if (storageAvailable("localStorage")){
+            let tasklist = localStorage.getItem('tasklist').split(',')
+            if(tasklist == null) {
+                localStorage.setitem('tasklist', [task.title])
+            }else{
+                tasklist.push(task.title)
+                localStorage.setitem('tasklist', tasklist.toString())
+            }
+
+            localStorage.setItem(projectname + '-' + task.title + '-' + 'title', task.title)
+            localStorage.setItem(projectname + '-' + task.title + '-' + 'description', task.description)
+            localStorage.setItem(projectname + '-' + task.title + '-' + 'dueDate', task.dueDate)
+            localStorage.setItem(projectname + '-' + task.title + '-' + 'priority', task.priority)
+            localStorage.setItem(projectname + '-' + task.title + '-' + 'notes', task.notes)
+            localStorage.setItem(projectname + '-' + task.title + '-' + 'iscomplete', task.iscomplete)
+        }
+    }
+
+    function SaveProjectsToLocal(projectarray){
+        if (storageAvailable("localStorage")){
+            localStorage.setItem('projectlist', projectarray.toString())
+        }
+    }
+
+    function LoadProjects(){
+        if (storageAvailable("localStorage")){
+            return localStorage.getItem('projectlist').split(',')
+        }
+    }
+
+    function LoadTasks(){
+        if (storageAvailable("localStorage")){
+            return localStorage.getItem('tasklist').split(',')
+        }
+    }
+
+    return {SaveTaskToLocal, SaveProjectsToLocal, LoadProjects, LoadTasks}
+}
+
 class Task{
     constructor(title,id){
     this.title= title
@@ -249,6 +317,7 @@ const TaskController = (task) => {
             task.notes = view.innerviews.notes.value
             task.iscomplete = view.innerviews.iscomplete.checked
           }
+          LocalStorageHandler().SaveTaskToLocal(task, project.title)
         })
 
         views.forEach((view) => {
@@ -361,6 +430,8 @@ const ProjectView = (id) => {
         return node;
     }
 
+    const LoadTasks = function()    
+
     const SetOnAddTaskButtonClickedListener = function(onAddTaskButtonClicked){
         innerviews.addtaskbutton.removeEventListener('click', addtaskfunction, false)
         addtaskfunction = onAddTaskButtonClicked
@@ -462,6 +533,30 @@ class ProjectSideView{
     }
 
     SetOnAddTaskButtonClickedListener = (fun) => {
+        const PortfolioView = (id, querystring) => {
+            let node = null;
+        
+            function GetNode(){
+                if(node == null){
+                let portfoliopage = document.createElement('div')
+                portfoliopage.id = id + '-page'
+        
+                node = portfoliopage
+                return portfoliopage
+            }
+                return node
+            }
+        
+            const AddProjectView = (projectview) => {
+                node.appendChild(projectview.GetNode())
+            }
+        
+            const RemoveProjectView = (id) => {
+                node.removeChild(document.querySelector('#' + id + '-regular-card'))
+            }
+        
+            return {GetNode, AddProjectView, RemoveProjectView, querystring}
+        }
         //do nothing
     }
 
@@ -588,31 +683,6 @@ Portfolio.prototype.RemoveProjectByIndex = function(index){
     this.projectcontrollers.splice(index, 0 )
 }
 
-const PortfolioView = (id, querystring) => {
-    let node = null;
-
-    function GetNode(){
-        if(node == null){
-        let portfoliopage = document.createElement('div')
-        portfoliopage.id = id + '-page'
-
-        node = portfoliopage
-        return portfoliopage
-    }
-        return node
-    }
-
-    const AddProjectView = (projectview) => {
-        node.appendChild(projectview.GetNode())
-    }
-
-    const RemoveProjectView = (id) => {
-        node.removeChild(document.querySelector('#' + id + '-regular-card'))
-    }
-
-    return {GetNode, AddProjectView, RemoveProjectView, querystring}
-}
-
 
 const PortfolioController = (portfolio) => {
     const REGULAR = 'regular'
@@ -667,4 +737,4 @@ const PortfolioController = (portfolio) => {
 }
 
 
-export {Task, TaskView, TaskController, Project, ProjectView, ProjectController, Portfolio, PortfolioController, PortfolioView}
+export {Task, TaskView, TaskController, Project, ProjectView, ProjectController, Portfolio, PortfolioController}

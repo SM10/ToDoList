@@ -1,2 +1,5 @@
 add storage system as per Odin Project.
+    -helper class added
+    -save task done
+    -need to work on load tasks, load projects
 fix css for detail and side
