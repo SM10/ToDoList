@@ -28,12 +28,16 @@ function storageAvailable(type) {
 const LocalStorageHandler = () => {
     function SaveTaskToLocal(task, projectname) {
         if (storageAvailable("localStorage")){
-            let tasklist = localStorage.getItem('tasklist').split(',')
-            if(tasklist == null) {
-                localStorage.setitem('tasklist', [task.title])
+            let tasklist = localStorage.getItem(projectname + '-tasklist');
+            if(tasklist == null){
+                tasklist = []
+                localStorage.setItem(projectname + '-tasklist', JSON.stringify(tasklist))
             }else{
+                tasklist = JSON.parse(tasklist)
+            }
+            if(!tasklist.includes(task.title)){
                 tasklist.push(task.title)
-                localStorage.setitem('tasklist', tasklist.toString())
+                localStorage.setItem(projectname + '-tasklist', JSON.stringify(tasklist.toString()))
             }
 
             localStorage.setItem(projectname + '-' + task.title + '-' + 'title', task.title)
@@ -45,25 +49,107 @@ const LocalStorageHandler = () => {
         }
     }
 
-    function SaveProjectsToLocal(projectarray){
+    function SaveProjectToLocal(projectname){
         if (storageAvailable("localStorage")){
-            localStorage.setItem('projectlist', projectarray.toString())
+            let projectlist = localStorage.getItem('projectlist')
+            
+            if(projectlist == ''){
+                localStorage.setItem('projectlist', JSON.stringify(Array.from(projectname)))
+            }else if(projectlist.includes(projectname)){
+                //do nothing
+            }
+            else{
+                projectlist = JSON.parse(projectlist)
+                console.log('saveprojecttolocal debug: ' + projectlist)
+                projectlist.push(projectname)
+                localStorage.setItem('projectlist', JSON.stringify(projectlist))
+            }
+            console.log('postsave attempt check: ' + localStorage.getItem('projectlist'))
         }
+        let tasklist = []
+        localStorage.setItem(projectname + '-tasklist', JSON.stringify(tasklist))
     }
 
     function LoadProjects(){
         if (storageAvailable("localStorage")){
-            return localStorage.getItem('projectlist').split(',')
+            return JSON.parse(localStorage.getItem('projectlist'))
         }
     }
 
-    function LoadTasks(){
+    function LoadTasks(projectname){
         if (storageAvailable("localStorage")){
-            return localStorage.getItem('tasklist').split(',')
+            if (localStorage.getItem(projectname + '-tasklist') == null){
+                return null
+            }
+            return JSON.parse(localStorage.getItem(projectname + '-tasklist'))
         }
     }
 
-    return {SaveTaskToLocal, SaveProjectsToLocal, LoadProjects, LoadTasks}
+    function LoadTaskDescription(tasktitle, projectname){
+        if(storageAvailable("localStorage")){
+            return JSON.parse(localStorage.getItem(projectname + '-' + tasktitle + '-' + 'description'))
+        }
+    }
+
+    function LoadTaskDueDate(tasktitle, projectname){
+        if(storageAvailable("localStorage")){
+            return JSON.parse(localStorage.getItem(projectname + '-' + tasktitle + '-' + 'dueDate'))
+        }
+    }
+
+    function LoadTaskPriority(tasktitle, projectname){
+        if(storageAvailable("localStorage")){
+            return JSON.parse(localStorage.getItem(projectname + '-' + tasktitle + '-' + 'priority'))
+        }
+    }
+
+    function LoadTaskNotes(tasktitle, projectname){
+        if(storageAvailable("localStorage")){
+            return JSON.parse(localStorage.getItem(projectname + '-' + tasktitle + '-' + 'notes'))
+        }
+    }
+
+    function LoadTaskIsComplete(tasktitle, projectname){
+        if(storageAvailable("localStorage")){
+            return JSON.parse(localStorage.getItem(projectname + '-' + tasktitle + '-' + 'iscomplete'))
+        }
+    }
+
+    function DeleteTask(tasktitle, projectname){
+        if(storageAvailable("localStorage")){
+            let tasklist = JSON.parse(localStorage.getItem(projectname + '-tasklist'))
+            if (tasklist.includes(tasktitle)){
+                tasklist.splice(tasklist.indexOf(tasktitle), 1)
+                localStorage.setItem(projectname + '-tasklist', JSON.stringify(tasklist.toString()))
+            }
+
+            localStorage.removeItem(projectname + '-' + tasktitle + '-' + 'title')
+                localStorage.removeItem(projectname + '-' + tasktitle + '-' + 'description')
+                localStorage.removeItem(projectname + '-' + tasktitle + '-' + 'dueDate')
+                localStorage.removeItem(projectname + '-' + tasktitle + '-' + 'priority')
+                localStorage.removeItem(projectname + '-' + tasktitle + '-' + 'notes')
+                localStorage.removeItem(projectname + '-' + tasktitle + '-' + 'iscomplete')
+        }
+    }
+
+    function DeleteProject(projectname){
+        if(storageAvailable("localStorage")){
+            let projectlist = JSON.parse(localStorage.getItem('projectlist'))
+            if(projectlist.includes(projectname)){
+                projectlist.splice(projectlist.indexOf(projectname), 1)
+                localStorage.setItem('projectlist', JSON.stringify(projectlist))
+            }
+
+            let tasklist = LoadTasks(projectname)
+            if(tasklist == null){return}
+            tasklist.forEach((tasktitle) => {
+                DeleteTask(tasktitle, projectname)
+            })
+            localStorage.removeItem(projectname + '-tasklist')
+        }
+    }
+
+    return {SaveTaskToLocal, SaveProjectToLocal, LoadProjects, LoadTasks, LoadTaskDescription, LoadTaskDueDate, LoadTaskPriority, LoadTaskNotes, LoadTaskIsComplete, DeleteTask, DeleteProject}
 }
 
 class Task{
@@ -206,7 +292,6 @@ const TaskView = (id) => {
     const SetOnSaveButtonClickedListener = function(onSaveButtonClicked){
         if(innerviews.savebutton != null){innerviews.savebutton.removeEventListener('click', savefunction, false)}
         savefunction = function(event){
-            console.log('check')
             let v = CreateViewNode()
             GetNode().replaceWith(v)
             onSaveButtonClicked(event)
@@ -287,9 +372,8 @@ const TaskSideView = (id) =>{
     return {GetNode, innerviews, SetOnSaveButtonClickedListener, SetOnDeleteButtonClickedListener}
 }
 
-const TaskController = (task) => {
+const TaskController = (task, project) => {
     let views = []
-    let project = null
     
     function AddView(view){
         view.GetNode();
@@ -302,6 +386,8 @@ const TaskController = (task) => {
         views.forEach(view => {
             view.GetNode().remove()
         })
+
+        LocalStorageHandler().DeleteTask(task.title, project.title)
     }
 
     function OnSave(event){
@@ -317,6 +403,7 @@ const TaskController = (task) => {
             task.notes = view.innerviews.notes.value
             task.iscomplete = view.innerviews.iscomplete.checked
           }
+          
           LocalStorageHandler().SaveTaskToLocal(task, project.title)
         })
 
@@ -369,7 +456,6 @@ Project.prototype.RemoveProjectByIndex = function RemoveTaskByIndex(index){
 Project.prototype.Delete = function (){
     delete this
 }
-
 
 const ProjectView = (id) => {
     let node = null
@@ -430,8 +516,6 @@ const ProjectView = (id) => {
         return node;
     }
 
-    const LoadTasks = function()    
-
     const SetOnAddTaskButtonClickedListener = function(onAddTaskButtonClicked){
         innerviews.addtaskbutton.removeEventListener('click', addtaskfunction, false)
         addtaskfunction = onAddTaskButtonClicked
@@ -446,7 +530,7 @@ const ProjectView = (id) => {
 
     const TitleSavedView = function(){
         let newtitle = innerviews.projecttitle.value
-        console.log(titlepassfunction)
+
         if(titlepassfunction != null){
             titlepassfunction(newtitle)
         }
@@ -481,6 +565,52 @@ const ProjectView = (id) => {
         
     }
 
+    const ToggleViewMode = function(){
+        if(innerviews.projecttitle.tagName == 'div'){
+            let projecttitle = document.createElement('input')
+            projecttitle.id = id + '-title'
+            projecttitle.value = innerviews.projecttitle.textContent
+            innerviews.projecttitle.replaceWith(projecttitle)
+            innerviews.projecttitle = projecttitle
+
+            let saveprojectnamebutton = document.createElement('button')
+            saveprojectnamebutton.textContent = 'Save Title'
+            saveprojectnamebutton.className = '-save-title project-lv-button'
+            saveprojectnamebutton.id = id + '-save-title'
+            saveprojectnamebutton.addEventListener('click', TitleSavedView, false)
+            innerviews.saveprojectnamebutton.replaceWith(saveprojectnamebutton)
+            innerviews.saveprojectnamebutton = saveprojectnamebutton
+        }else{
+            let projecttitle = document.createElement('div')
+        projecttitle.id = id + '-title'
+        projecttitle.textContent = innerviews.projecttitle.value
+        innerviews.projecttitle.replaceWith(projecttitle)
+        innerviews.projecttitle = projecttitle
+
+        let saveprojectnamebutton = document.createElement('button')
+        saveprojectnamebutton.textContent = 'Change Title'
+        saveprojectnamebutton.className = '-change-title project-lv-button'
+        saveprojectnamebutton.id = id + '-change-title'
+        saveprojectnamebutton.addEventListener('click', ()=>{
+            let projecttitle = document.createElement('input')
+            projecttitle.id = id + '-title'
+            projecttitle.value = innerviews.projecttitle.textContent
+            innerviews.projecttitle.replaceWith(projecttitle)
+            innerviews.projecttitle = projecttitle
+
+            let saveprojectnamebutton = document.createElement('button')
+            saveprojectnamebutton.textContent = 'Save Title'
+            saveprojectnamebutton.className = '-save-title project-lv-button'
+            saveprojectnamebutton.id = id + '-save-title'
+            saveprojectnamebutton.addEventListener('click', TitleSavedView, false)
+            innerviews.saveprojectnamebutton.replaceWith(saveprojectnamebutton)
+            innerviews.saveprojectnamebutton = saveprojectnamebutton
+        }, false)
+        innerviews.saveprojectnamebutton.replaceWith(saveprojectnamebutton)
+        innerviews.saveprojectnamebutton = saveprojectnamebutton
+        }
+    }
+
     const AddTaskView = function(taskview){
         node.appendChild(taskview.GetNode())
     }
@@ -493,7 +623,12 @@ const ProjectView = (id) => {
         titlepassfunction = titlepassfunc;
     }
 
-    return {GetNode, SetOnAddTaskButtonClickedListener, SetOnDeleteButtonClickedListener, AddTaskView, RemoveView, innerviews, SetTitlePassFunction}
+    function SetTitle(title){
+        innerviews.projecttitle.textContent = title
+        innerviews.projecttitle.value = title
+    }
+
+    return {GetNode, SetOnAddTaskButtonClickedListener, SetOnDeleteButtonClickedListener, AddTaskView, RemoveView, innerviews, SetTitlePassFunction, SetTitle, ToggleViewMode}
 }
 
 class ProjectSideView{
@@ -566,7 +701,17 @@ class ProjectSideView{
         }
     }
 
-    SetTitlePassFunction () {}
+    SetTitlePassFunction () {
+    }
+
+    SetTitle(title){
+        this.innerviews.projecttitle.textContent = title
+        this.innerviews.projecttitle.value = title
+    }
+
+    RemoveView() {this.GetNode().remove()}
+
+    ToggleViewMode(){}
 }
 
 const ProjectController = (project) => {
@@ -589,10 +734,14 @@ const ProjectController = (project) => {
         })
         let titlepass = (title) => {
             project.title = title
+            console.log('titlepass check: ' + title)
             views.forEach(view => {
                 view.innerviews.projecttitle.textContent = title
-            })}
+            })
+            LocalStorageHandler().SaveProjectToLocal(title)
+        }
         view.SetTitlePassFunction(titlepass)
+        view.SetTitle(project.title)
     }
 
     const AttachTaskViewsToView = function(view, taskcontroller){
@@ -616,22 +765,25 @@ const ProjectController = (project) => {
     }
 
     const AddTask = function(task){
-        let taskcontroller = TaskController(task)
-        taskcontroller.project = this
+        let taskcontroller = TaskController(task, project)
         project.AddTaskController(taskcontroller)
+        console.log(project.taskcontrollers)
 
         views.forEach(view => {
             let tv;
-            console.log(view instanceof ProjectSideView);
             if(view instanceof ProjectSideView){
                 tv = TaskSideView(taskcontroller.GetID())
             }else{
                 tv = TaskView(taskcontroller.GetID())
             }
             taskcontroller.AddView(tv)
-            console.log(view.GetNode())
-            console.log(tv.GetNode())
             view.AddTaskView(tv)
+        })
+    }
+
+    const ToggleViewMode = function(){
+        views.forEach(view => {
+            view.ToggleViewMode()
         })
     }
 
@@ -640,6 +792,8 @@ const ProjectController = (project) => {
             dview.RemoveView()
         })
         if(project.portfolio != null) project.portfolio.RemoveProjectByObject(project)
+        LocalStorageHandler().DeleteProject(project.title)
+        console.log(localStorage.getItem('projectlist'))
         project.Delete()
     }
 
@@ -659,9 +813,10 @@ const ProjectController = (project) => {
 
     const SetPortfolio = (portfolio) => {
         project.portfolio = portfolio
+        LocalStorageHandler().SaveProjectToLocal(project.title)
     }
 
-    return {AddTask, RemoveTaskByObject, RemoveTaskByIndex, AddView, GetID, SetPortfolio}
+    return {AddTask, RemoveTaskByObject, RemoveTaskByIndex, AddView, GetID, SetPortfolio, ToggleViewMode}
 }
 
 function Portfolio(id){
@@ -697,6 +852,7 @@ const PortfolioController = (portfolio) => {
         let pc = ProjectController(project)
         portfolio.AddProjectController(pc)
         OnProjectAdded(pc)
+        return pc
     }
 
     const AddProjectViewContainer = (containerstring, viewtype) => {
@@ -733,8 +889,43 @@ const PortfolioController = (portfolio) => {
         portfolio.projects.splice(index, 0 )
     }
 
-    return {AddProject, RemoveProjectByObject, RemoveProjectByIndex, OnProjectAdded, GetID, REGULAR, SMALL, AddProjectViewContainer}
-}
+    const LoadData = () =>{
+        if(localStorage.getItem('projectlist') == ''){
+            let list = ['Default']
+            localStorage.setItem('projectlist', JSON.stringify(list))
+        }
 
+        if(localStorage.getItem('tasklist') == null){
+            let list = []
+            localStorage.setItem('tasklist', JSON.stringify(list))
+        }
+
+        let projectlist = LocalStorageHandler().LoadProjects()
+        console.log('projectlist check: ' + projectlist)
+        projectlist.forEach((projectname) => {
+            console.log(projectname)
+            let project = new Project(projectname, crypto.randomUUID())
+            let projectcontroller = AddProject(project)
+            projectcontroller.ToggleViewMode()
+            
+            let tasklist = LocalStorageHandler().LoadTasks(projectname)
+            tasklist.forEach((taskname)=>{
+                if (taskname != ''){
+                let task = new Task(taskname, crypto.randomUUID())
+                
+                task.SetValue('description', LocalStorageHandler().LoadTaskDescription(taskname, projectname))
+                task.SetValue('dueDate', LocalStorageHandler().LoadTaskDueDate(taskname, projectname))
+                task.SetValue('priority', LocalStorageHandler().LoadTaskPriority(taskname, projectname))
+                task.SetValue('notes', LocalStorageHandler().LoadTaskNotes(taskname, projectname))
+                task.SetValue('iscomplete', LocalStorageHandler().LoadTaskIsComplete(taskname, projectname))
+
+                projectcontroller.AddTask(task)
+                }
+            })
+        })
+    }
+
+    return {AddProject, RemoveProjectByObject, RemoveProjectByIndex, OnProjectAdded, GetID, REGULAR, SMALL, AddProjectViewContainer, LoadData}
+}
 
 export {Task, TaskView, TaskController, Project, ProjectView, ProjectController, Portfolio, PortfolioController}
