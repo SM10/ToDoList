@@ -29,45 +29,47 @@ const LocalStorageHandler = () => {
     function SaveTaskToLocal(task, projectname) {
         if (storageAvailable("localStorage")){
             let tasklist = localStorage.getItem(projectname + '-tasklist');
-            if(tasklist == null){
-                tasklist = []
-                localStorage.setItem(projectname + '-tasklist', JSON.stringify(tasklist))
-            }else{
+
+            if(tasklist == '' || tasklist == null){
+                
+                localStorage.setItem(projectname + '-tasklist', JSON.stringify([task.title]))
+
+            }else if(!tasklist.includes(task.title)){
                 tasklist = JSON.parse(tasklist)
-            }
-            if(!tasklist.includes(task.title)){
+
                 tasklist.push(task.title)
-                localStorage.setItem(projectname + '-tasklist', JSON.stringify(tasklist.toString()))
+                console.log(projectname + '-tasklist')
+                localStorage.setItem(projectname + '-tasklist', JSON.stringify(tasklist))
             }
 
-            localStorage.setItem(projectname + '-' + task.title + '-' + 'title', task.title)
-            localStorage.setItem(projectname + '-' + task.title + '-' + 'description', task.description)
-            localStorage.setItem(projectname + '-' + task.title + '-' + 'dueDate', task.dueDate)
-            localStorage.setItem(projectname + '-' + task.title + '-' + 'priority', task.priority)
-            localStorage.setItem(projectname + '-' + task.title + '-' + 'notes', task.notes)
-            localStorage.setItem(projectname + '-' + task.title + '-' + 'iscomplete', task.iscomplete)
+            console.log(localStorage.getItem(projectname + '-tasklist'))
+
+                localStorage.setItem(projectname + '-' + task.title + '-' + 'title', task.title)
+                localStorage.setItem(projectname + '-' + task.title + '-' + 'description', task.description)
+                localStorage.setItem(projectname + '-' + task.title + '-' + 'dueDate', task.dueDate)
+                localStorage.setItem(projectname + '-' + task.title + '-' + 'priority', task.priority)
+                localStorage.setItem(projectname + '-' + task.title + '-' + 'notes', task.notes)
+                localStorage.setItem(projectname + '-' + task.title + '-' + 'iscomplete', task.iscomplete)
         }
     }
 
-    function SaveProjectToLocal(projectname){
+    function SaveProjectToLocal(projectname, oldprojectname){
         if (storageAvailable("localStorage")){
             let projectlist = localStorage.getItem('projectlist')
             
-            if(projectlist == ''){
+            if(projectlist == '' || projectlist ==  null){
                 localStorage.setItem('projectlist', JSON.stringify(Array.from(projectname)))
-            }else if(projectlist.includes(projectname)){
-                //do nothing
-            }
-            else{
+            }else if(!projectlist.includes(projectname)){
                 projectlist = JSON.parse(projectlist)
-                console.log('saveprojecttolocal debug: ' + projectlist)
+                
                 projectlist.push(projectname)
                 localStorage.setItem('projectlist', JSON.stringify(projectlist))
             }
-            console.log('postsave attempt check: ' + localStorage.getItem('projectlist'))
+
+            if (oldprojectname != null){
+                MigrateProject(oldprojectname, projectname)
+            }
         }
-        let tasklist = []
-        localStorage.setItem(projectname + '-tasklist', JSON.stringify(tasklist))
     }
 
     function LoadProjects(){
@@ -78,57 +80,67 @@ const LocalStorageHandler = () => {
 
     function LoadTasks(projectname){
         if (storageAvailable("localStorage")){
-            if (localStorage.getItem(projectname + '-tasklist') == null){
-                return null
-            }
+            console.log(projectname + '-tasklist')
             return JSON.parse(localStorage.getItem(projectname + '-tasklist'))
         }
     }
 
     function LoadTaskDescription(tasktitle, projectname){
         if(storageAvailable("localStorage")){
-            return JSON.parse(localStorage.getItem(projectname + '-' + tasktitle + '-' + 'description'))
+            let ret = localStorage.getItem(projectname + '-' + tasktitle + '-' + 'description')
+            if (ret == '') return null
+            return ret
         }
     }
 
     function LoadTaskDueDate(tasktitle, projectname){
         if(storageAvailable("localStorage")){
-            return JSON.parse(localStorage.getItem(projectname + '-' + tasktitle + '-' + 'dueDate'))
+            let ret = localStorage.getItem(projectname + '-' + tasktitle + '-' + 'dueDate')
+            if (ret == '') return null
+            return ret
         }
     }
 
     function LoadTaskPriority(tasktitle, projectname){
         if(storageAvailable("localStorage")){
-            return JSON.parse(localStorage.getItem(projectname + '-' + tasktitle + '-' + 'priority'))
+            let ret = localStorage.getItem(projectname + '-' + tasktitle + '-' + 'priority')
+            if (ret == '') return null
+            return ret
         }
     }
 
     function LoadTaskNotes(tasktitle, projectname){
         if(storageAvailable("localStorage")){
-            return JSON.parse(localStorage.getItem(projectname + '-' + tasktitle + '-' + 'notes'))
+            let ret = localStorage.getItem(projectname + '-' + tasktitle + '-' + 'notes')
+            if (ret == '') return null
+            return ret
         }
     }
 
     function LoadTaskIsComplete(tasktitle, projectname){
         if(storageAvailable("localStorage")){
-            return JSON.parse(localStorage.getItem(projectname + '-' + tasktitle + '-' + 'iscomplete'))
+            let ret = localStorage.getItem(projectname + '-' + tasktitle + '-' + 'iscomplete')
+            if (ret == '') return null
+            return ret
         }
     }
 
-    function DeleteTask(tasktitle, projectname){
+    function DeleteTask(task, projectname){
         if(storageAvailable("localStorage")){
             let tasklist = JSON.parse(localStorage.getItem(projectname + '-tasklist'))
-            if (tasklist.includes(tasktitle)){
-                tasklist.splice(tasklist.indexOf(tasktitle), 1)
-                localStorage.setItem(projectname + '-tasklist', JSON.stringify(tasklist.toString()))
+            if(tasklist != null){
+            if (tasklist.includes(task.title)){
+                tasklist.splice(tasklist.indexOf(task.title), 1)
+                localStorage.setItem(projectname + '-tasklist', JSON.stringify(tasklist))
             }
 
-            localStorage.removeItem(projectname + '-' + tasktitle + '-' + 'title')
-                localStorage.removeItem(projectname + '-' + tasktitle + '-' + 'description')
-                localStorage.removeItem(projectname + '-' + tasktitle + '-' + 'dueDate')
-                localStorage.removeItem(projectname + '-' + tasktitle + '-' + 'priority')
-                localStorage.removeItem(projectname + '-' + tasktitle + '-' + 'notes')
-                localStorage.removeItem(projectname + '-' + tasktitle + '-' + 'iscomplete')
+                localStorage.removeItem(projectname + '-' + task.title + '-' + 'title')
+                localStorage.removeItem(projectname + '-' + task.title + '-' + 'description')
+                localStorage.removeItem(projectname + '-' + task.title + '-' + 'dueDate')
+                localStorage.removeItem(projectname + '-' + task.title + '-' + 'priority')
+                localStorage.removeItem(projectname + '-' + task.title + '-' + 'notes')
+                localStorage.removeItem(projectname + '-' + task.title + '-' + 'iscomplete')
+        }
         }
     }
 
@@ -149,6 +161,26 @@ const LocalStorageHandler = () => {
         }
     }
 
+    function MigrateProject(oldprojectname, newprojectname){
+        if(oldprojectname == '' || oldprojectname == null) {return}
+        let oldtasks = LoadTasks(oldprojectname)
+        let newtasks = []
+        if (oldtasks != null){
+        oldtasks.forEach((task) =>{
+            newtasks.push(task)
+
+            localStorage.setItem(newprojectname + '-' + task.title + '-' + 'title', localStorage.getItem(oldprojectname + '-' + task.title + '-' + 'title'))
+            localStorage.setItem(newprojectname + '-' + task.title + '-' + 'description', localStorage.getItem(oldprojectname + '-' + task.title + '-' + 'description'))
+            localStorage.setItem(newprojectname + '-' + task.title + '-' + 'dueDate', localStorage.getItem(oldprojectname + '-' + task.title + '-' + 'dueDate'))
+            localStorage.setItem(newprojectname + '-' + task.title + '-' + 'priority', localStorage.getItem(oldprojectname + '-' + task.title + '-' + 'priority'))
+            localStorage.setItem(newprojectname + '-' + task.title + '-' + 'notes', localStorage.getItem(oldprojectname + '-' + task.title + '-' + 'notes'))
+            localStorage.setItem(newprojectname + '-' + task.title + '-' + 'iscomplete', localStorage.getItem(oldprojectname + '-' + task.title + '-' + 'iscomplete'))
+        })
+    }
+        localStorage.setItem(newprojectname + '-tasklist', JSON.stringify(newtasks))
+        DeleteProject(oldprojectname)
+    }
+    
     return {SaveTaskToLocal, SaveProjectToLocal, LoadProjects, LoadTasks, LoadTaskDescription, LoadTaskDueDate, LoadTaskPriority, LoadTaskNotes, LoadTaskIsComplete, DeleteTask, DeleteProject}
 }
 
@@ -162,10 +194,10 @@ class Task{
     this.iscomplete = null
     this.id = id
     }
-}
 
-Task.prototype.SetValue = (propertyname, value) => {
-    this[propertyname] = value
+    SetValue = (propertyname, value) => {
+        if(value != null) this[propertyname] = value
+    }
 }
 
 const TaskView = (id) => {
@@ -342,7 +374,13 @@ const TaskView = (id) => {
         
         return regularview
     }
-    return {GetNode, SetOnSaveButtonClickedListener, SetOnDeleteButtonClickedListener, innerviews, CreateNode, CreateDiv}
+
+    const ToggleViewMode = () => {
+            let v = CreateViewNode()
+            GetNode().replaceWith(v)
+    }
+
+    return {GetNode, SetOnSaveButtonClickedListener, SetOnDeleteButtonClickedListener, innerviews, CreateNode, CreateDiv, ToggleViewMode}
 }
 
 const TaskSideView = (id) =>{
@@ -368,8 +406,9 @@ const TaskSideView = (id) =>{
 
     const SetOnSaveButtonClickedListener = (event) => {}
     const SetOnDeleteButtonClickedListener = (event) => {}
+    const ToggleViewMode = () => {}
 
-    return {GetNode, innerviews, SetOnSaveButtonClickedListener, SetOnDeleteButtonClickedListener}
+    return {GetNode, innerviews, SetOnSaveButtonClickedListener, SetOnDeleteButtonClickedListener, ToggleViewMode}
 }
 
 const TaskController = (task, project) => {
@@ -387,10 +426,11 @@ const TaskController = (task, project) => {
             view.GetNode().remove()
         })
 
-        LocalStorageHandler().DeleteTask(task.title, project.title)
+        LocalStorageHandler().DeleteTask(task, project.title)
     }
 
     function OnSave(event){
+        LocalStorageHandler().DeleteTask(task, project.title)
         views.forEach((view) => {
           if(view.innerviews.savebutton != null && event.target.id == view.innerviews.savebutton.id){
             task.title = view.innerviews.title.value
@@ -404,8 +444,8 @@ const TaskController = (task, project) => {
             task.iscomplete = view.innerviews.iscomplete.checked
           }
           
-          LocalStorageHandler().SaveTaskToLocal(task, project.title)
         })
+        LocalStorageHandler().SaveTaskToLocal(task, project.title)
 
         views.forEach((view) => {
 
@@ -719,7 +759,7 @@ const ProjectController = (project) => {
 
     const AddView = function(view){
         view.GetNode()
-        view.innerviews.projecttitle.textContent = project.title
+        view.innerviews.projecttitle.value = project.title
         project.taskcontrollers.forEach((taskcontroller)=>{
             AttachTaskViewsToView(view, taskcontroller)
         })
@@ -733,12 +773,12 @@ const ProjectController = (project) => {
             OnDelete()
         })
         let titlepass = (title) => {
+            let oldtitle = project.title
             project.title = title
-            console.log('titlepass check: ' + title)
             views.forEach(view => {
                 view.innerviews.projecttitle.textContent = title
             })
-            LocalStorageHandler().SaveProjectToLocal(title)
+            LocalStorageHandler().SaveProjectToLocal(title, oldtitle)
         }
         view.SetTitlePassFunction(titlepass)
         view.SetTitle(project.title)
@@ -767,7 +807,6 @@ const ProjectController = (project) => {
     const AddTask = function(task){
         let taskcontroller = TaskController(task, project)
         project.AddTaskController(taskcontroller)
-        console.log(project.taskcontrollers)
 
         views.forEach(view => {
             let tv;
@@ -778,6 +817,11 @@ const ProjectController = (project) => {
             }
             taskcontroller.AddView(tv)
             view.AddTaskView(tv)
+            if(task.title != null && task.title != ''){
+                tv.GetNode()
+                tv.innerviews.title.value = task.title
+                tv.ToggleViewMode()
+            }
         })
     }
 
@@ -793,7 +837,6 @@ const ProjectController = (project) => {
         })
         if(project.portfolio != null) project.portfolio.RemoveProjectByObject(project)
         LocalStorageHandler().DeleteProject(project.title)
-        console.log(localStorage.getItem('projectlist'))
         project.Delete()
     }
 
@@ -813,10 +856,14 @@ const ProjectController = (project) => {
 
     const SetPortfolio = (portfolio) => {
         project.portfolio = portfolio
-        LocalStorageHandler().SaveProjectToLocal(project.title)
+        LocalStorageHandler().SaveProjectToLocal(project.title, null)
     }
 
-    return {AddTask, RemoveTaskByObject, RemoveTaskByIndex, AddView, GetID, SetPortfolio, ToggleViewMode}
+    const LoadInTask = (task) => {
+        AddTask(task)
+    }
+
+    return {AddTask, RemoveTaskByObject, RemoveTaskByIndex, AddView, GetID, SetPortfolio, ToggleViewMode, LoadInTask}
 }
 
 function Portfolio(id){
@@ -895,34 +942,32 @@ const PortfolioController = (portfolio) => {
             localStorage.setItem('projectlist', JSON.stringify(list))
         }
 
-        if(localStorage.getItem('tasklist') == null){
-            let list = []
-            localStorage.setItem('tasklist', JSON.stringify(list))
-        }
-
         let projectlist = LocalStorageHandler().LoadProjects()
-        console.log('projectlist check: ' + projectlist)
+        console.log('projectlist: ' + projectlist)
+        if(projectlist != null){
         projectlist.forEach((projectname) => {
-            console.log(projectname)
             let project = new Project(projectname, crypto.randomUUID())
             let projectcontroller = AddProject(project)
             projectcontroller.ToggleViewMode()
             
             let tasklist = LocalStorageHandler().LoadTasks(projectname)
+            if(tasklist != null){
             tasklist.forEach((taskname)=>{
                 if (taskname != ''){
                 let task = new Task(taskname, crypto.randomUUID())
                 
                 task.SetValue('description', LocalStorageHandler().LoadTaskDescription(taskname, projectname))
                 task.SetValue('dueDate', LocalStorageHandler().LoadTaskDueDate(taskname, projectname))
-                task.SetValue('priority', LocalStorageHandler().LoadTaskPriority(taskname, projectname))
+                //task.SetValue('priority', LocalStorageHandler().LoadTaskPriority(taskname, projectname))
                 task.SetValue('notes', LocalStorageHandler().LoadTaskNotes(taskname, projectname))
-                task.SetValue('iscomplete', LocalStorageHandler().LoadTaskIsComplete(taskname, projectname))
+                //task.SetValue('iscomplete', LocalStorageHandler().LoadTaskIsComplete(taskname, projectname))
 
-                projectcontroller.AddTask(task)
+                projectcontroller.LoadInTask(task)
                 }
             })
+        }
         })
+    }
     }
 
     return {AddProject, RemoveProjectByObject, RemoveProjectByIndex, OnProjectAdded, GetID, REGULAR, SMALL, AddProjectViewContainer, LoadData}

@@ -2,6 +2,8 @@ import './personal_logo.jpg'
 import './style.css'
 import {Project, Portfolio, PortfolioController, PortfolioView} from './component.js'
 
+//localStorage.clear()
+
 let testportfolio = new Portfolio(crypto.randomUUID())
 let testcontroller = PortfolioController(testportfolio)
 
