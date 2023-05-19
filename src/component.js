@@ -38,7 +38,6 @@ const LocalStorageHandler = () => {
                 tasklist = JSON.parse(tasklist)
 
                 tasklist.push(task.title)
-                console.log(projectname + '-tasklist')
                 localStorage.setItem(projectname + '-tasklist', JSON.stringify(tasklist))
             }
 
@@ -290,7 +289,6 @@ const TaskView = (id) => {
         innerviews.editbutton.id = formid
         innerviews.editbutton.addEventListener('click', (event) =>{
             viewmode.replaceWith(GetNode())
-            GetNode().appendChild(innerviews.deletebutton)
         }, false)
         
         return innerviews.editbutton
@@ -436,9 +434,10 @@ const TaskController = (task, project) => {
             task.title = view.innerviews.title.value
             task.description = view.innerviews.description.value
             task.dueDate = view.innerviews.dueDate.value
-            if(view.innerviews.high.value) task.priority= 'high'
-            if(view.innerviews.normal.value) task.priority = 'normal'
-            if(view.innerviews.low.value) task.priority = 'low'
+            if(view.innerviews.high.checked) task.priority= 'high'
+            else if(view.innerviews.normal.checked) task.priority = 'normal'
+            else if(view.innerviews.low.checked) task.priority = 'low'
+            console.log(task.priority)
 
             task.notes = view.innerviews.notes.value
             task.iscomplete = view.innerviews.iscomplete.checked
@@ -455,7 +454,7 @@ const TaskController = (task, project) => {
             if(view.innerviews.description != null) view.innerviews.description.value = task.description
             if(view.innerviews.dueDate != null) view.innerviews.dueDate.value = task.dueDate 
 
-            if(view.innerviews[task.priority] != null) {view.innerviews[task.priority].value = task.iscomplete}
+            if(view.innerviews[task.priority] != null) {view.innerviews[task.priority].checked = true}
 
             if(view.innerviews.notes != null) view.innerviews.notes.value = task.notes
             if(view.innerviews.iscomplete != null) view.innerviews.iscomplete.checked = task.iscomplete
@@ -820,6 +819,14 @@ const ProjectController = (project) => {
             if(task.title != null && task.title != ''){
                 tv.GetNode()
                 tv.innerviews.title.value = task.title
+                tv.innerviews.title.textContent = task.title
+                if(tv.innerviews.description != null && tv.innerviews.description.value != null) tv.innerviews.description.value = task.description
+                if(tv.innerviews.dueDate != null && tv.innerviews.dueDate.value != null) tv.innerviews.dueDate.value = task.dueDate
+                if(task.priority != null && tv.innerviews[task.priority] != null){
+                    tv.innerviews[task.priority].checked = true
+                }
+                if(tv.innerviews.notes != null && tv.innerviews.notes.value != null) tv.innerviews.notes.value = task.notes
+                tv.innerviews.iscomplete.ischecked = task.ischecked
                 tv.ToggleViewMode()
             }
         })
@@ -958,9 +965,9 @@ const PortfolioController = (portfolio) => {
                 
                 task.SetValue('description', LocalStorageHandler().LoadTaskDescription(taskname, projectname))
                 task.SetValue('dueDate', LocalStorageHandler().LoadTaskDueDate(taskname, projectname))
-                //task.SetValue('priority', LocalStorageHandler().LoadTaskPriority(taskname, projectname))
+                task.SetValue('priority', LocalStorageHandler().LoadTaskPriority(taskname, projectname))
                 task.SetValue('notes', LocalStorageHandler().LoadTaskNotes(taskname, projectname))
-                //task.SetValue('iscomplete', LocalStorageHandler().LoadTaskIsComplete(taskname, projectname))
+                task.SetValue('iscomplete', LocalStorageHandler().LoadTaskIsComplete(taskname, projectname))
 
                 projectcontroller.LoadInTask(task)
                 }
