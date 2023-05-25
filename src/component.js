@@ -299,21 +299,31 @@ const TaskView = (id) => {
             card.className = 'task-card task-regular-card'
             card.id = id + '-regular-card'
     
-            card.appendChild(CreateDiv(id, innerviews.title.value, 'title'))
-            card.appendChild(CreateDiv(id, innerviews.description.value, 'description'))
-            card.appendChild(CreateDiv(id, innerviews.dueDate.value, 'dueDate'))
-                if(innerviews.high.checked) card.appendChild(CreateDiv(id, innerviews.high.value, 'high'))
-                if(innerviews.normal.checked) card.appendChild(CreateDiv(id, innerviews.normal.value, 'normal'))
-                if(innerviews.low.checked) card.appendChild(CreateDiv(id, innerviews.low.value, 'low'))
-            card.appendChild(CreateDiv(id, innerviews.notes.value, 'notes'))
-            if(innerviews.iscomplete.checked == 'on') card.appendChild(CreateDiv(id, 'Completed', 'completed'))
-            card.appendChild(CreateEditButton(id + '-edit'))
+            let info = document.createElement('div')
+            info.className = 'regular-task-view-info-block'
+            card.appendChild(info)
+
+            info.appendChild(CreateDiv(id, innerviews.title.value, 'title'))
+            info.appendChild(CreateDiv(id, innerviews.description.value, 'description'))
+            info.appendChild(CreateDiv(id, innerviews.dueDate.value, 'dueDate'))
+                if(innerviews.high.checked) info.appendChild(CreateDiv(id, innerviews.high.value, 'high'))
+                if(innerviews.normal.checked) info.appendChild(CreateDiv(id, innerviews.normal.value, 'normal'))
+                if(innerviews.low.checked) info.appendChild(CreateDiv(id, innerviews.low.value, 'low'))
+                info.appendChild(CreateDiv(id, innerviews.notes.value, 'notes'))
+            if(innerviews.iscomplete.checked == 'on') info.appendChild(CreateDiv(id, 'Completed', 'completed'))
+
+
+            let buttons = document.createElement('div')
+            buttons.className = 'regular-task-view-button-block'
+            card.appendChild(buttons)
+
+            buttons.appendChild(CreateEditButton(id + '-edit'))
             let del = CreateDeleteButton(id + '-delete')
             del.addEventListener('click', () => {
                 deletefunction()
                 card.remove()
             })
-            card.appendChild(del)
+            buttons.appendChild(del)
             
             viewmode = card
             return card
@@ -362,8 +372,12 @@ const TaskView = (id) => {
         form.appendChild(CreateRadio(id  + 'lowpriority', 'priority', 'low'))
         form.appendChild(CreateNode(id  + 'notes', 'Notes', 'notes', 'text'))
         form.appendChild(CreateNode(id  + 'iscomplete', 'Completed', 'iscomplete', 'checkbox'))
-        form.appendChild(CreateSaveButton(id + '-save'))
-        form.appendChild(CreateDeleteButton(id + '-delete'))
+
+        let buttons = document.createElement('div')
+        buttons.className = 'task-buttons'
+        card.appendChild(buttons)
+        buttons.appendChild(CreateSaveButton(id + '-save'))
+        buttons.appendChild(CreateDeleteButton(id + '-delete'))
 
         regularview = card
 
@@ -513,14 +527,23 @@ const ProjectView = (id) => {
     const GetNode = () => {
         if (node == null){
             let projectpage = document.createElement('div')
-            projectpage.classname = 'project-regular-card'
+            projectpage.className = 'project-regular-card'
             projectpage.id = id + '-page'
             node = projectpage
             
+            let projecttitlearea = document.createElement('div')
+            projecttitlearea.className = 'project-title-area'
+            projectpage.appendChild(projecttitlearea)
+
             let projecttitle = document.createElement('input')
             projecttitle.id = id + '-title'
+            projecttitle.className = 'project-title project-lv-edit'
             innerviews.projecttitle = projecttitle
-            projectpage.appendChild(projecttitle)
+            projecttitlearea.appendChild(projecttitle)
+
+            let buttons = document.createElement('div')
+            buttons.className = 'project-buttons'
+            projecttitlearea.appendChild(buttons)
 
             let saveprojectnamebutton = document.createElement('button')
             saveprojectnamebutton.textContent = 'Save Title'
@@ -528,27 +551,27 @@ const ProjectView = (id) => {
             saveprojectnamebutton.id = id + '-save-title'
             innerviews.saveprojectnamebutton = saveprojectnamebutton
             saveprojectnamebutton.addEventListener('click', TitleSavedView, false)
-            projectpage.appendChild(saveprojectnamebutton)
+            buttons.appendChild(saveprojectnamebutton)
 
             let addtaskbutton = document.createElement('button')
             addtaskbutton.textContent = 'Add Task'
             addtaskbutton.className = 'add-task-button project-lv-button'
             addtaskbutton.id = id + '-add-task'
             innerviews.addtaskbutton = addtaskbutton
-            projectpage.appendChild(addtaskbutton)
+            buttons.appendChild(addtaskbutton)
 
             let deleteproject = document.createElement('button')
             deleteproject.textContent = 'Delete Project'
             deleteproject.className = 'add-task-button project-lv-button'
             deleteproject.id = id + '-delete-project'
             innerviews.deleteprojectbutton = deleteproject
-            projectpage.appendChild(deleteproject)
+            buttons.appendChild(deleteproject)
 
             let expandicon = document.createElement('img')
             expandicon.className = 'project-lv-icon'
             expandicon.id = id + '-expand-project'
             innerviews.expandicon = expandicon
-            projectpage.appendChild(expandicon)
+            buttons.appendChild(expandicon)
 
             return projectpage
         }
@@ -576,13 +599,14 @@ const ProjectView = (id) => {
         
         let projecttitle = document.createElement('div')
         projecttitle.id = id + '-title'
+        projecttitle.className = 'project-title'
         projecttitle.textContent = newtitle
         innerviews.projecttitle.replaceWith(projecttitle)
         innerviews.projecttitle = projecttitle
 
         let saveprojectnamebutton = document.createElement('button')
         saveprojectnamebutton.textContent = 'Change Title'
-        saveprojectnamebutton.className = '-change-title project-lv-button'
+        saveprojectnamebutton.className = 'change-title project-lv-button'
         saveprojectnamebutton.id = id + '-change-title'
         saveprojectnamebutton.addEventListener('click', ()=>{
             let projecttitle = document.createElement('input')
@@ -608,6 +632,7 @@ const ProjectView = (id) => {
         if(innerviews.projecttitle.tagName == 'div'){
             let projecttitle = document.createElement('input')
             projecttitle.id = id + '-title'
+            projecttitle.className = 'project-title'
             projecttitle.value = innerviews.projecttitle.textContent
             innerviews.projecttitle.replaceWith(projecttitle)
             innerviews.projecttitle = projecttitle
@@ -622,6 +647,7 @@ const ProjectView = (id) => {
         }else{
             let projecttitle = document.createElement('div')
         projecttitle.id = id + '-title'
+        projecttitle.className = 'project-title'
         projecttitle.textContent = innerviews.projecttitle.value
         innerviews.projecttitle.replaceWith(projecttitle)
         innerviews.projecttitle = projecttitle
@@ -633,6 +659,7 @@ const ProjectView = (id) => {
         saveprojectnamebutton.addEventListener('click', ()=>{
             let projecttitle = document.createElement('input')
             projecttitle.id = id + '-title'
+            projecttitle.className = 'project-title'
             projecttitle.value = innerviews.projecttitle.textContent
             innerviews.projecttitle.replaceWith(projecttitle)
             innerviews.projecttitle = projecttitle
@@ -681,7 +708,7 @@ class ProjectSideView{
     GetNode(){
         if (this.node == null){
             let projectpage = document.createElement('div')
-            projectpage.classname = 'project-side-card'
+            projectpage.className = 'project-side-card'
             projectpage.id = this.id + '-page'
             
             let projecttitle = document.createElement('div')

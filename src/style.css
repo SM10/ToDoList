@@ -1,5 +1,6 @@
 *{
     box-sizing: border-box;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
 }
 
 html, body{
@@ -9,10 +10,6 @@ html, body{
     height: 100%;
     font-size: 15px;
     background-color: lightgray;
-}
-
-.title{
-    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
 }
 
 .page-container{
@@ -47,7 +44,8 @@ html, body{
 
 .projectbar{
     padding: 2vh;
-    min-width: 20rem;
+    min-width: 16rem;
+    max-width: 20rem;
     min-height: 40rem;
 }
 
@@ -79,4 +77,47 @@ button:hover{
     align-items: center;
     vertical-align: baseline;
     padding: 2rem 1rem
+}
+
+#detailbar{
+    width: 100%;
+    height: fit-content;
+}
+
+#detailbar button{
+    height: 3rem;
+    margin: 0 0.5rem 0;
+}
+
+.project-regular-card{
+    background-color: lightgray;
+    border-radius: 10px;
+    padding: 2rem;
+    margin: 1rem;
+}
+
+.project-title-area, .task-regular-card{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    background-color: white;
+    border-radius: 10px;
+    padding: 2rem;
+}
+
+.project-title{
+    font-size: 2.5rem;
+}
+
+.task-regular-card{
+    margin-top: 2rem;
+}
+
+.regular-task-view-info-block > *{
+    padding: 0.1rem 0 0.1rem
+}
+
+.task-title{
+    font-size: 1.5rem
 }
